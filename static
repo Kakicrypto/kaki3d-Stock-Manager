@@ -1,0 +1,13 @@
+import base64
+
+# Fonction pour encoder l'image
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+# On récupère le code de ton logo (remplace 'logo.png' par ton vrai nom de fichier)
+img_base64 = get_base64_of_bin_file('new_logo_kaki3d.png')
+
+# Dans ton HTML, remplace le src par :
+# src="data:image/png;base64,{img_base64}"

@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#00FFC8"          # Un vert néon qui rappelle le futur
+backgroundColor = "#0E1117"       # Un gris très sombre, presque noir
+secondaryBackgroundColor = "#161B22" # Gris foncé pour les widgets
+textColor = "#E6EDF3"             # Blanc cassé pour la lecture
+font = "sans serif"
