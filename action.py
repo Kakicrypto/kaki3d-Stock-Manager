@@ -291,3 +291,6 @@ def get_spool_by_nfc(nfc_uid: str):
         return None
     finally:
         connexion.close()
+        
+def stats ():
+    connexion = get_connection()

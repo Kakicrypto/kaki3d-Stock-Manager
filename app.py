@@ -82,7 +82,7 @@ if menu == ":material/inventory_2: État du stock":
 elif menu == ":material/add_circle: Ajouter une bobine":
     st.title(":material/add_circle: Enregistrer un nouveau filament")
 
-# --- 1. GESTION DE L'AJOUT DE MATIÈRE (Hors formulaire) ---
+# --- 3. GESTION DE L'AJOUT DE MATIÈRE (Hors formulaire) ---
     liste_matieres_brute = get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
@@ -152,13 +152,13 @@ elif menu == ":material/add_circle: Ajouter une bobine":
                 st.warning("Marque, Matière et Couleur sont obligatoires !")
 
 
-# --- 3. ANALYSES (IDÉE) ---
+# --- 4. ANALYSES (IDÉE) ---
 elif menu == ":material/analytics: Statistiques & Analyse":
     st.title(":material/analytics: Statistiques")
     st.write("C'est ici qu'on mettra tes futurs graphiques de Data Analyst !")
     st.info("Prochaine étape : Ajouter un graphique de consommation par mois ou par matière.")
 
-#--- 4. UPDATE ---
+#--- 5. UPDATE ---
 
 elif menu == ":material/tune: Modifier une bobine":
     if st.session_state.get('update_success'):
@@ -222,7 +222,7 @@ elif menu == ":material/tune: Modifier une bobine":
     else:
         st.warning("⚠️ Aucune donnée trouvée dans la base.") 
 
-#---5.Ajout consomation---
+#---6.Ajout consomation---
 
 elif menu == ":material/monitor_weight: Consommation":
     if st.session_state.get('conso_success'):
@@ -389,3 +389,9 @@ elif menu == ":material/nfc: Scanner NFC":
                 st.session_state.nfc_uid = None
                 st.session_state.nfc_spool = None
                 st.rerun()
+
+
+#----- 8.Analyse 
+
+#elif menu ==  ":material/analytics: Statistiques & Analyse":
+    
