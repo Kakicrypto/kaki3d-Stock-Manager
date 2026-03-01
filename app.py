@@ -5,6 +5,7 @@ from action import get_inventory, add_spool, get_or_create_id, update_spool, usa
 import time 
 import datetime
 import base64
+from config_custom import pseudo
 
 # Configuration de la page
 #st.image("asset/new_logo_kaki3d.png",width=220)
@@ -28,7 +29,7 @@ st.markdown(
             <img src="{logo_html}" style="width: 200px;">
             <div style="flex-grow: 1;">
                 <h1 style="color: white; margin-left: -40px; text-align: center;">
-                    Kaki3d <span style="font-weight: 100;">| Stock Manager</span>
+                    {pseudo} <span style="font-weight: 100;">| Stock Manager</span>
                 </h1>
                 <p style="color: #d8dee9; text-align: center; margin-left: -40px;">
                     Suivi des consommations et inventaire des bobines
