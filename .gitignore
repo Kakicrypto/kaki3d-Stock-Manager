@@ -10,3 +10,6 @@ __pycache__/
 # Fichiers inutiles
 *.architect~
 .DS_Store
+Backup/
+*.architect
+schema relationel .jpg
