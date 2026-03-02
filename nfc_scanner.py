@@ -32,8 +32,7 @@ def nfc_scanner_component():
         document.getElementById('scan-btn').addEventListener('click', async () => {
             alert("1 - fonction démarrée");
             await startNFCScan();
-         });
-    });
+        });
         
         <div id="nfc-result" style="
             display: none;
