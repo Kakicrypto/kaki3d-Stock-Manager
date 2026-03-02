@@ -4,13 +4,6 @@
 import streamlit.components.v1 as components
 
 def nfc_scanner_component():
-    """
-    Injecte un composant HTML/JS qui utilise la Web NFC API.
-    Retourne l'UID NFC scanné, ou None si pas encore scanné.
-    
-    ⚠️  Compatible uniquement avec : Android + Chrome (ou Chromium)
-    ⚠️  Nécessite HTTPS (ou localhost pour les tests)
-    """
 
     nfc_html = """
     <div id="nfc-container" style="
@@ -28,8 +21,8 @@ def nfc_scanner_component():
         <p id="nfc-status" style="color: #aaa; font-size: 14px; margin: 0 0 16px 0;">
             Appuie sur le bouton, puis approche ton tag NFC
         </p>
-        
-        <button id="scan-btn" onclick="startNFCScan()" style="
+
+        <button id="scan-btn" style="
             background: #4CAF50;
             color: white;
             border: none;
@@ -41,7 +34,7 @@ def nfc_scanner_component():
         ">
             🔍 Démarrer le scan
         </button>
-        
+
         <div id="nfc-result" style="
             display: none;
             margin-top: 16px;
@@ -68,76 +61,51 @@ def nfc_scanner_component():
 
     <script>
     let nfcReader = null;
-    let isScanning = false;
+
+    // ✅ Event listener ici, dans le <script>, pas dans le HTML
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('scan-btn').addEventListener('click', function() {
+            alert("1 - fonction démarrée");
+            startNFCScan();
+        });
+    });
 
     async function startNFCScan() {
-        const statusEl = document.getElementById('nfc-status');
-        const btnEl = document.getElementById('scan-btn');
-        const resultEl = document.getElementById('nfc-result');
-        const errorEl = document.getElementById('nfc-error');
-        const uidEl = document.getElementById('nfc-uid');
 
-        // Reset
-        resultEl.style.display = 'none';
-        errorEl.style.display = 'none';
-
-        // Vérifie si Web NFC est dispo
         if (!('NDEFReader' in window)) {
-            errorEl.style.display = 'block';
-            errorEl.innerHTML = '❌ Web NFC non supporté sur ce navigateur.<br><small>Utilise Chrome sur Android.</small>';
+            alert("2 - NDEFReader non supporté !");
             return;
         }
 
-        try {
-            btnEl.disabled = true;
-            btnEl.style.background = '#888';
-            statusEl.textContent = '📡 En attente du tag NFC... (approche-le)';
-            statusEl.style.color = '#FFD700';
+        alert("3 - NDEFReader disponible, tentative scan...");
 
+        try {
             nfcReader = new NDEFReader();
             await nfcReader.scan();
+            alert("4 - scan() réussi, en attente du tag !");
 
             nfcReader.addEventListener("reading", ({ message, serialNumber }) => {
                 const uid = serialNumber.toUpperCase();
-                
-                // Affichage résultat
-                uidEl.textContent = uid;
-                resultEl.style.display = 'block';
-                statusEl.textContent = '✅ Tag scanné avec succès !';
-                statusEl.style.color = '#4CAF50';
-                btnEl.disabled = false;
-                btnEl.style.background = '#4CAF50';
-                btnEl.textContent = '🔄 Scanner un autre';
+                alert("5 - Tag lu ! UID : " + uid);
 
-                // Envoi vers Streamlit via postMessage
-                window.parent.postMessage({
-                    type: 'nfc_scanned',
-                    uid: uid
-                }, '*');
+                document.getElementById('nfc-uid').textContent = uid;
+                document.getElementById('nfc-result').style.display = 'block';
+                document.getElementById('nfc-status').textContent = '✅ Tag scanné : ' + uid;
+
+                setTimeout(() => {
+                    window.top.location.href = window.top.location.pathname + "?nfc_uid=" + uid;
+                }, 1500);
             });
 
             nfcReader.addEventListener("readingerror", () => {
-                errorEl.style.display = 'block';
-                errorEl.textContent = '⚠️ Erreur de lecture. Réessaie.';
-                btnEl.disabled = false;
-                btnEl.style.background = '#4CAF50';
+                alert("ERREUR de lecture du tag !");
             });
 
         } catch (error) {
-            errorEl.style.display = 'block';
-            if (error.name === 'NotAllowedError') {
-                errorEl.innerHTML = '🔒 Permission NFC refusée.<br><small>Autorise l\'accès NFC dans ton navigateur.</small>';
-            } else {
-                errorEl.innerHTML = '❌ Erreur : ' + error.message;
-            }
-            btnEl.disabled = false;
-            btnEl.style.background = '#4CAF50';
-            statusEl.textContent = 'Appuie sur le bouton, puis approche ton tag NFC';
-            statusEl.style.color = '#aaa';
+            alert("ERREUR : " + error.name + " - " + error.message);
         }
     }
 
-    // Écoute le postMessage de l'iframe parente (pour debug / futures extensions)
     window.addEventListener('message', function(event) {
         if (event.data && event.data.type === 'nfc_reset') {
             document.getElementById('nfc-result').style.display = 'none';
@@ -147,6 +115,4 @@ def nfc_scanner_component():
     </script>
     """
 
-    # On injecte le composant et on écoute via st.components
-    # La hauteur est fixe, ajuste si besoin
     components.html(nfc_html, height=280, scrolling=False)

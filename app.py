@@ -83,7 +83,7 @@ if menu == ":material/inventory_2: État du stock":
 elif menu == ":material/add_circle: Ajouter une bobine":
     st.title(":material/add_circle: Enregistrer un nouveau filament")
 
-# --- 3. GESTION DE L'AJOUT DE MATIÈRE (Hors formulaire) ---
+# --- 2.1. GESTION DE L'AJOUT DE MATIÈRE (Hors formulaire) ---
     liste_matieres_brute = get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
@@ -262,7 +262,7 @@ elif menu == ":material/monitor_weight: Consommation":
     else:
         st.warning("⚠️ Aucune donnée trouvée dans la base.")  
 
-
+# menu de scan 
 elif menu == ":material/nfc: Scanner NFC":
 
     import streamlit.components.v1 as components
@@ -303,11 +303,11 @@ elif menu == ":material/nfc: Scanner NFC":
     # Solution alternative propre : on expose un petit champ
     # caché mis à jour par JS via st.query_params (Streamlit ≥ 1.30)
     try:
-        params = st.query_params          # dict-like depuis Streamlit 1.30
-        if "nfc_uid" in params and params["nfc_uid"]:
+        params = st.query_params
+        if "nfc_uid" in params:
             st.session_state.nfc_uid = params["nfc_uid"].upper()
-            # On efface le param pour éviter une boucle
             st.query_params.clear()
+            st.rerun()  # ← recharge proprement sans l'UID dans l'URL
     except Exception:
         pass  # ancienne version de Streamlit, on ignore
 
