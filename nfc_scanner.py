@@ -30,11 +30,22 @@ def nfc_scanner_component():
         </p>
         
         <button id="scan-btn" style="...">Lancer le scan</button>
-        
+
+        <div id="nfc-result" style="display: none;">
+            <p id="nfc-uid"></p>
+        </div>
+    </div>
+
+        <script>
+        // 2. La logique (JavaScript) bien séparée
         document.getElementById('scan-btn').addEventListener('click', async () => {
             alert("1 - fonction démarrée");
-            await startNFCScan();
+            // Note: Assure-toi que startNFCScan() est définie ici aussi !
+            if (typeof startNFCScan === 'function') {
+                await startNFCScan();
+            }
         });
+        </script>
         
         <div id="nfc-result" style="
             display: none;
