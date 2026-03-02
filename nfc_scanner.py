@@ -29,6 +29,8 @@ def nfc_scanner_component():
             Appuie sur le bouton, puis approche ton tag NFC
         </p>
         
+        <button id="scan-btn" style="...">Lancer le scan</button>
+        
         document.getElementById('scan-btn').addEventListener('click', async () => {
             alert("1 - fonction démarrée");
             await startNFCScan();
