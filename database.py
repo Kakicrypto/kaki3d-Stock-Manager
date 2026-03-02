@@ -9,7 +9,8 @@ def get_connection():
         host=st.secrets["database"]["host"],
         dbname=st.secrets["database"]["dbname"],
         user=st.secrets["database"]["user"],
-        password=st.secrets["database"]["password"]
+        password=st.secrets["database"]["password"],
+        port=st.secrets["database"]["port"]
     )
     except psycopg2.Error as e:
         print(f"Erreur lors de la connexion : {e}")

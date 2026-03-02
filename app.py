@@ -3,9 +3,12 @@ import streamlit as st
 import pandas as pd
 from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials
 import time 
-import datetime
+import datetime, time
 import base64
 from config_custom import pseudo
+import streamlit.components.v1 as components
+from nfc_scanner import nfc_scanner_component   # notre composant HTML/JS
+from action import get_spool_by_nfc, usage_log  # get_spool_by_nfc = nouvelle fonction
 
 # Configuration de la page
 #st.image("asset/new_logo_kaki3d.png",width=220)
@@ -264,12 +267,18 @@ elif menu == ":material/monitor_weight: Consommation":
 
 # menu de scan 
 elif menu == ":material/nfc: Scanner NFC":
+# Récupère l'UID si on revient du scan
+    params = st.query_params
+    if "nfc_uid" in params:
+        st.session_state.nfc_uid = params["nfc_uid"].upper()
+        st.query_params.clear()
 
-    import streamlit.components.v1 as components
-    from nfc_scanner import nfc_scanner_component   # notre composant HTML/JS
-    from action import get_spool_by_nfc, usage_log  # get_spool_by_nfc = nouvelle fonction
-    import datetime, time
-
+    # Bouton qui ouvre la page NFC statique
+    app_url = "https://kaki3d-stock-manager.streamlit.app"
+    st.link_button(
+        "📡 Scanner un tag NFC",
+        url=f"/app/static/nfc.html?return={app_url}"
+    )
     st.title(":material/nfc: Scanner une bobine NFC")
     st.markdown(
         """

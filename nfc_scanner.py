@@ -4,6 +4,13 @@
 import streamlit.components.v1 as components
 
 def nfc_scanner_component():
+    """
+    Injecte un composant HTML/JS qui utilise la Web NFC API.
+    Retourne l'UID NFC scanné, ou None si pas encore scanné.
+    
+    ⚠️  Compatible uniquement avec : Android + Chrome (ou Chromium)
+    ⚠️  Nécessite HTTPS (ou localhost pour les tests)
+    """
 
     nfc_html = """
     <div id="nfc-container" style="
@@ -21,20 +28,13 @@ def nfc_scanner_component():
         <p id="nfc-status" style="color: #aaa; font-size: 14px; margin: 0 0 16px 0;">
             Appuie sur le bouton, puis approche ton tag NFC
         </p>
-
-        <button id="scan-btn" style="
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        ">
-            🔍 Démarrer le scan
-        </button>
-
+        
+        document.getElementById('scan-btn').addEventListener('click', async () => {
+            alert("1 - fonction démarrée");
+            await startNFCScan();
+         });
+    });
+        
         <div id="nfc-result" style="
             display: none;
             margin-top: 16px;
@@ -62,15 +62,8 @@ def nfc_scanner_component():
     <script>
     let nfcReader = null;
 
-    // ✅ Event listener ici, dans le <script>, pas dans le HTML
-    document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('scan-btn').addEventListener('click', function() {
-            alert("1 - fonction démarrée");
-            startNFCScan();
-        });
-    });
-
     async function startNFCScan() {
+        alert("1 - fonction démarrée");
 
         if (!('NDEFReader' in window)) {
             alert("2 - NDEFReader non supporté !");
