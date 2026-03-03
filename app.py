@@ -99,7 +99,8 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         with col1:
             brand_name = st.text_input("Marque (ex: Prusament, Esun)")
             color = st.text_input("Nom de la couleur")
-            nfc = st.text_input("ID Tag NFC (optionnel)")
+            if st.session_state.nfc_ajout :
+                nfc = st.text_input("ID Tag NFC", value=st.session_state.get("nfc_ajout", ""))
         with col2:
             w_init = st.number_input("Poids initial (g)", value=1000.0, step=1.0)
             w_empty = st.number_input("Poids bobine vide (g)", value=200.0, step=1.0)
@@ -128,6 +129,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
                     temp_table=t_tab, debit=deb, pressure_adv=pa,
                     vit_max=vit, id_marques=id_m, id_materials=id_mat, vit_imp=vit_imp
                 ):
+                    st.session_state.nfc_ajout = None
                     st.success(f"✅ Bobine {brand_name} {color} ajoutée !")
                 else:
                     st.error("Erreur technique lors de l'insertion.")
@@ -266,6 +268,9 @@ elif menu == ":material/nfc: Scanner NFC":
 
         if spool is None:
             st.error(f"❌ Aucune bobine trouvée pour l'UID **{uid}**.")
+            st.session_state.menu = ":material/add_circle: Ajouter une bobine"
+            st.session_state.nfc_ajout = uid
+            st.rerun()
             if st.button("🔄 Réinitialiser"):
                 st.session_state.nfc_uid = None
                 st.rerun()
