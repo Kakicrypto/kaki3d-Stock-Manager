@@ -269,8 +269,9 @@ elif menu == ":material/nfc: Scanner NFC":
 
         if spool is None:
             st.error(f"❌ Aucune bobine trouvée pour l'UID **{uid}**.")
-            st.session_state.menu = ":material/add_circle: Ajouter une bobine"
             st.session_state.nfc_ajout = uid
+            st.session_state.nfc_uid = None  # ← reset le scan
+            st.session_state.menu = ":material/add_circle: Ajouter une bobine" #<-- accés au menu ajout bobine
             st.rerun()
             if st.button("🔄 Réinitialiser"):
                 st.session_state.nfc_uid = None
