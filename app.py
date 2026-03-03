@@ -50,7 +50,7 @@ menu = st.sidebar.radio(
         ":material/tune: Modifier une bobine",
         ":material/monitor_weight: Consommation",
         ":material/nfc: Scanner NFC"
-    ]
+    ],
     key="menu"
 )
 
