@@ -47,23 +47,25 @@ if st.session_state.get("redirect_to"):
     st.query_params["page"] = target
     st.rerun()
 
-st.sidebar.title("Menu")
-menu = st.sidebar.radio(
-    pages =[
-        ":material/inventory_2: État du stock",
-        ":material/add_circle: Ajouter une bobine",
-        ":material/analytics: Statistiques & Analyse",
-        ":material/tune: Modifier une bobine",
-        ":material/monitor_weight: Consommation",
-        ":material/nfc: Scanner NFC"
-    ]
-    default = 0
+# Définition des pages
+pages = [
+    ":material/inventory_2: État du stock",
+    ":material/add_circle: Ajouter une bobine",
+    ":material/analytics: Statistiques & Analyse",
+    ":material/tune: Modifier une bobine",
+    ":material/monitor_weight: Consommation",
+    ":material/nfc: Scanner NFC"
+]
+
+# Index par défaut selon la redirection
+default = 0
 if st.query_params.get("page") == "ajout":
     default = 1
     st.query_params.clear()
 
+# Menu radio
+st.sidebar.title("Menu")
 menu = st.sidebar.radio("Navigation", pages, index=default)
-)
 
 # --- 1. ÉTAT DU STOCK ---
 if menu == ":material/inventory_2: État du stock":
