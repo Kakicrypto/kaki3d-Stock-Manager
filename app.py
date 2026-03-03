@@ -40,6 +40,19 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Initialisation session
+if "nfc_uid" not in st.session_state:
+    st.session_state.nfc_uid = None
+if "nfc_ajout" not in st.session_state:
+    st.session_state.nfc_ajout = None
+
+# Intercepte le retour de nfc.html
+if "nfc_uid" in st.query_params:
+    st.session_state.nfc_uid = st.query_params["nfc_uid"].upper()
+    st.query_params.clear()
+    st.query_params["page"] = "nfc"  # ← force la page NFC
+    st.rerun()
+
 # Gestion de la redirection NFC
 if st.session_state.get("redirect_to"):
     target = st.session_state.redirect_to
@@ -62,7 +75,11 @@ default = 0
 if st.query_params.get("page") == "ajout":
     default = 1
     st.query_params.clear()
+elif st.query_params.get("page") == "nfc":
+    default = 5
+    st.query_params.clear()
 
+menu = st.sidebar.radio("Navigation", pages, index=default)
 # Menu radio
 st.sidebar.title("Menu")
 menu = st.sidebar.radio("Navigation", pages, index=default)
