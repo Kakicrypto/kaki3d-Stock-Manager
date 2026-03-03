@@ -79,7 +79,23 @@ password = "TON_MOT_DE_PASSE"
 port     = "5432"
 ```
 
-### 6. Lance l'application
+### 6. Modification de votre configuration 
+
+dans le fichier config_custom.py 
+
+pseudo = "******"  <-- mettre votre pseudo.
+
+dans le fichier config.toml 
+
+[theme]
+primaryColor = "#00FFC8"          	# Un vert néon 
+backgroundColor = "#0E1117"       	# Un gris très sombre
+secondaryBackgroundColor = "#161B22" 	# Gris foncé pour les widgets
+textColor = "#E6EDF3"             	# Blanc cassé pour la lecture
+font = "sans serif"			# Police d'écriture
+
+
+### 7. Lance l'application
 
 ```bash
 streamlit run app.py
@@ -97,7 +113,7 @@ streamlit run app.py
 
 ---
 
-## 📡 Fonctionnalité NFC
+## 📡 Fonctionnalité NFC [En cours de finalisation]
 
 La lecture NFC utilise la **Web NFC API** du navigateur.
 
