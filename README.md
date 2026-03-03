@@ -88,6 +88,7 @@ pseudo = "******"  <-- mettre votre pseudo.
 dans le fichier config.toml 
 
 [theme]
+
 primaryColor = "#00FFC8"          	# Un vert néon 
 backgroundColor = "#0E1117"       	# Un gris très sombre
 secondaryBackgroundColor = "#161B22" 	# Gris foncé pour les widgets
