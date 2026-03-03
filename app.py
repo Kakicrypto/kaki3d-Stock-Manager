@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc
 import time 
-import datetime, time
+import datetime
 import base64
 from config_custom import pseudo
-import streamlit.components.v1 as components
-from nfc_scanner import nfc_scanner_component   # notre composant HTML/JS
-from action import get_spool_by_nfc, usage_log  # get_spool_by_nfc = nouvelle fonction
 
 # Configuration de la page
-#st.image("asset/new_logo_kaki3d.png",width=220)
 st.set_page_config(page_title="Mon Stock de Filament - Kaki3D", layout="wide")
 
 def get_base64(path):
@@ -19,12 +15,11 @@ def get_base64(path):
         return base64.b64encode(image_file.read()).decode()
 
 try:
-    bin_str = get_base64("asset/new_logo_kaki3d.png") # Ton fichier ici
+    bin_str = get_base64("asset/new_logo_kaki3d.png")
     logo_html = f'data:image/png;base64,{bin_str}'
 except Exception:
-    logo_html = "" # Fallback si le fichier n'est pas trouvé
+    logo_html = ""
 
-# 2. Ta bannière remontée
 st.markdown(
     f"""
     <div style="background-color: #2e3440; padding: 20px; border-radius: 10px; border-left: 5px solid #4CAF50; margin-top: -60px;">
@@ -44,33 +39,33 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-#st.divider()
+
 st.sidebar.title("Menu")
 menu = st.sidebar.radio(
     "Navigation",
-    [":material/inventory_2: État du stock", ":material/add_circle: Ajouter une bobine", ":material/analytics: Statistiques & Analyse", ":material/tune: Modifier une bobine", ":material/monitor_weight: Consommation",":material/nfc: Scanner NFC"] # liste du menue radio!
+    [
+        ":material/inventory_2: État du stock",
+        ":material/add_circle: Ajouter une bobine",
+        ":material/analytics: Statistiques & Analyse",
+        ":material/tune: Modifier une bobine",
+        ":material/monitor_weight: Consommation",
+        ":material/nfc: Scanner NFC"
+    ]
 )
 
 # --- 1. ÉTAT DU STOCK ---
 if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
     data = get_inventory()
-    # On appelle la nouvelle fonction
     data_global = get_aggregated_inventory()
 
     if data_global:
-    # On crée une grille (par exemple 4 colonnes)
         cols = st.columns(4)
-    
         for i, b in enumerate(data_global):
-        # On choisit la colonne (0, 1, 2, 3 puis on repart à 0)
             with cols[i % 4]:
-            # Calcul du ratio global
                 total_i = float(b['total_initial'])
                 total_r = float(b['total_restant'])
                 ratio = max(0.0, min(1.0, total_r / total_i)) if total_i > 0 else 0
-                
-                # Affichage
                 st.metric(f"{b['nom_marques']} - {b['color_name']}", f"{int(total_r)}g")
                 st.progress(ratio)
                 st.caption(f"Type: {b['type_materials']}")
@@ -78,7 +73,6 @@ if menu == ":material/inventory_2: État du stock":
         st.info("Aucune donnée à agréger.")
     st.divider()
     if data:
-        # Affichage en tableau propre via Pandas
         df = pd.DataFrame(data)
         st.dataframe(df, use_container_width=True)
 
@@ -86,23 +80,19 @@ if menu == ":material/inventory_2: État du stock":
 elif menu == ":material/add_circle: Ajouter une bobine":
     st.title(":material/add_circle: Enregistrer un nouveau filament")
 
-# --- 2.1. GESTION DE L'AJOUT DE MATIÈRE (Hors formulaire) ---
     liste_matieres_brute = get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
     options_avec_ajout = noms_matieres + ["Ajouter une nouvelle matière..."]
 
-    # On utilise un selectbox normal, pas dans un formulaire pour qu'il rafraîchisse vite
     choix_matiere = st.selectbox("Choisir la matière", options=options_avec_ajout)
 
-    id_mat = None
     if choix_matiere == "Ajouter une nouvelle matière...":
-        # Ce champ apparaît instantanément dès que tu choisis "Ajouter..."
         nouvelle_matiere = st.text_input("Nom de la nouvelle matière (ex: Carbon Fiber)")
         if nouvelle_matiere:
-            id_mat = get_or_create_id("materials", "type_materials", nouvelle_matiere)
+            st.session_state.id_mat = get_or_create_id("materials", "type_materials", nouvelle_matiere)
     else:
-        id_mat = dict_matieres[choix_matiere]
+        st.session_state.id_mat = dict_matieres[choix_matiere]
 
     with st.form("form_spool", clear_on_submit=True):
         col1, col2 = st.columns(2)
@@ -129,25 +119,14 @@ elif menu == ":material/add_circle: Ajouter une bobine":
             vit = st.number_input("Vit. Vol. Max", value=15)
         
         if st.form_submit_button("🚀 Enregistrer en base"):
+            id_mat = st.session_state.get("id_mat")
             if brand_name and color and id_mat:
-                # MAGIE : Création auto des IDs si n'existe pas
                 id_m = get_or_create_id("marques", "nom_marques", brand_name)
-                
                 if add_spool(
-                    nfc_id=nfc, 
-                    color_name=color, 
-                    initial_weight=w_init, 
-                    empty_weight=w_empty, 
-                    diametre=diam, 
-                    temp_imp=t_imp, 
-                    temp_table=t_tab, 
-                    debit=deb, 
-                    pressure_adv=pa, 
-                    vit_max=vit, 
-                    id_marques=id_m,   
-                    id_materials=id_mat, # id_mat vient de la logique selectbox plus haut
-                    vit_imp = vit_imp
-                    
+                    nfc_id=nfc, color_name=color, initial_weight=w_init,
+                    empty_weight=w_empty, diametre=diam, temp_imp=t_imp,
+                    temp_table=t_tab, debit=deb, pressure_adv=pa,
+                    vit_max=vit, id_marques=id_m, id_materials=id_mat, vit_imp=vit_imp
                 ):
                     st.success(f"✅ Bobine {brand_name} {color} ajoutée !")
                 else:
@@ -155,15 +134,13 @@ elif menu == ":material/add_circle: Ajouter une bobine":
             else:
                 st.warning("Marque, Matière et Couleur sont obligatoires !")
 
-
-# --- 4. ANALYSES (IDÉE) ---
+# --- 3. STATISTIQUES ---
 elif menu == ":material/analytics: Statistiques & Analyse":
     st.title(":material/analytics: Statistiques")
     st.write("C'est ici qu'on mettra tes futurs graphiques de Data Analyst !")
     st.info("Prochaine étape : Ajouter un graphique de consommation par mois ou par matière.")
 
-#--- 5. UPDATE ---
-
+# --- 4. MODIFIER UNE BOBINE ---
 elif menu == ":material/tune: Modifier une bobine":
     if st.session_state.get('update_success'):
         st.toast("Modifications enregistrées !", icon="✅")
@@ -171,12 +148,12 @@ elif menu == ":material/tune: Modifier une bobine":
     st.title("Modifier une bobine")
     data = get_inventory()
     c1, c2, _ = st.columns(3)
-    if data : 
-        with c1 :
+    if data:
+        with c1:
             choix = st.selectbox(
-            label= "slectionner la bobine a modifier", options=data, format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
+                label="Sélectionner la bobine à modifier", options=data,
+                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
         with st.form("edition"):
-            #les inputs string
             nouvelle_couleur = st.text_input("Couleur", value=choix['color_name'])
             nouvelle_marque = st.text_input("Marque", value=choix['nom_marques'])
             nouveau_nfc_id = st.text_input("NFC ID", value=choix['nfc_id'])
@@ -184,161 +161,115 @@ elif menu == ":material/tune: Modifier une bobine":
             st.divider()
             st.subheader("Paramètres techniques (Slicer)")
             c1, c2, c3 = st.columns(3)
-            #les inputs numbers
         with c1:
-            nouvelle_temp = st.number_input("Temperature buse", value=float(choix['temperature_imp'] ))
+            nouvelle_temp = st.number_input("Temperature buse", value=float(choix['temperature_imp']))
             nouvelle_temp_tab = st.number_input("Temperature plateau", value=float(choix['temperature_table']))
         with c2:
-            nouv_vit_imp = st.number_input("Vitess impression", value=float(choix['vit_imp']))
+            nouv_vit_imp = st.number_input("Vitesse impression", value=float(choix['vit_imp']))
             nouveau_debit = st.number_input("Débit", value=float(choix['debit']))
         with c3:
             nouvelle_PA = st.number_input("Pressure advance", value=float(choix['pressure_advance']))
-            nouvelle_Vmax = st.number_input("vitesse volumetrique", value=float(choix['vit_volum_max']))
-            #le bouton
-        with c1: submit = st.form_submit_button("Enregistrer les modifications")
+            nouvelle_Vmax = st.number_input("Vitesse volumetrique", value=float(choix['vit_volum_max']))
+        with c1:
+            submit = st.form_submit_button("Enregistrer les modifications")
         if submit:
             id_m = get_or_create_id("marques", "nom_marques", nouvelle_marque)
             id_mat = get_or_create_id("materials", "type_materials", nouveau_material)
             succes = update_spool(
-                id_spools = choix['id_spools'], # Crucial : on dit quelle ligne modifier
-                nfc_id = nouveau_nfc_id,
-                id_materials = id_mat,
-                id_marques = id_m,
-                color_name = nouvelle_couleur,
-                initial_weight= choix['initial_weight'],
-                empty_spool_weight = choix['empty_spool_weight'],
-                diametre= choix['diametre'],
-                temperature_imp = nouvelle_temp,
-                temperature_table = nouvelle_temp_tab,
-                vit_imp = nouv_vit_imp,
-                debit = nouveau_debit,
-                pressure_advance = nouvelle_PA,
-                vit_volum_max = nouvelle_Vmax
-                )
+                id_spools=choix['id_spools'], nfc_id=nouveau_nfc_id,
+                id_materials=id_mat, id_marques=id_m, color_name=nouvelle_couleur,
+                initial_weight=choix['initial_weight'], empty_spool_weight=choix['empty_spool_weight'],
+                diametre=choix['diametre'], temperature_imp=nouvelle_temp,
+                temperature_table=nouvelle_temp_tab, vit_imp=nouv_vit_imp,
+                debit=nouveau_debit, pressure_advance=nouvelle_PA, vit_volum_max=nouvelle_Vmax
+            )
             if succes:
                 st.session_state.update_success = True
-                #st.toast("Bobine mise à jour !", icon="✅")
-                #import time
-                #time.sleep(3.0)
-                st.rerun() # Pour rafraîchir l'affichage
+                st.rerun()
             else:
                 st.error("Erreur lors de la mise à jour en base.")
     else:
-        st.warning("⚠️ Aucune donnée trouvée dans la base.") 
+        st.warning("⚠️ Aucune donnée trouvée dans la base.")
 
-#---6.Ajout consomation---
-
+# --- 5. CONSOMMATION ---
 elif menu == ":material/monitor_weight: Consommation":
     if st.session_state.get('conso_success'):
-        st.toast(f"Consommation enregistrées !", icon="✅")
+        st.toast("Consommation enregistrées !", icon="✅")
     st.session_state.conso_success = False
-    st.title(":material/monitor_weight: Consommation filament ")
+    st.title(":material/monitor_weight: Consommation filament")
     data = get_inventory()
     c1, c2, c3 = st.columns(3)
-    if data : 
+    if data:
         with c1:
             choix = st.selectbox(
-            label= "slectionner la bobine que vous avez utilisé", options=data, format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
-        with c1: 
+                label="Sélectionner la bobine utilisée", options=data,
+                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
+        with c1:
             with st.form("Ajout"):
-                #les inputs string
                 nom_projet = st.text_input("Nom du projet imprimé")
-                #les inputs numbers
-                consommation = st.number_input("Poids consommé (g)", value=100.0, step = 1.0, max_value=float(choix['poids_restant']))
-                #les inputs date
-                date_print = st.date_input("date de l'impression", value = datetime.date.today())
-                #le bouton
-                submit = st.form_submit_button("Enregistrer la consomation")
+                consommation = st.number_input("Poids consommé (g)", value=100.0, step=1.0, max_value=float(choix['poids_restant']))
+                date_print = st.date_input("Date de l'impression", value=datetime.date.today())
+                submit = st.form_submit_button("Enregistrer la consommation")
             if submit:
                 succes = usage_log(
-                weight_used= consommation,
-                date_print= date_print,
-                id_spools = choix['id_spools'], # Crucial : on dit quelle ligne modifier
-                project_name= nom_projet
+                    weight_used=consommation, date_print=date_print,
+                    id_spools=choix['id_spools'], project_name=nom_projet
                 )
-                print(f"DEBUG: Valeur de succes = {succes}") # Tu verras ça dans ta console
                 if succes:
                     st.session_state.conso_success = True
                     st.rerun()
                 else:
                     st.error("Erreur lors de la mise à jour en base.")
     else:
-        st.warning("⚠️ Aucune donnée trouvée dans la base.")  
+        st.warning("⚠️ Aucune donnée trouvée dans la base.")
 
-# menu de scan 
+# --- 6. SCANNER NFC ---
 elif menu == ":material/nfc: Scanner NFC":
-# Récupère l'UID si on revient du scan
+    st.title(":material/nfc: Scanner une bobine NFC")
+
+    # Initialise la session
+    if "nfc_uid" not in st.session_state:
+        st.session_state.nfc_uid = None
+
+    # Récupère l'UID si on revient de la page NFC statique
     params = st.query_params
     if "nfc_uid" in params:
         st.session_state.nfc_uid = params["nfc_uid"].upper()
         st.query_params.clear()
+        st.rerun()
 
-    # Bouton qui ouvre la page NFC statique
+    # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
     app_url = "https://kaki3d-stock-manager.streamlit.app"
-    st.link_button(
-        "📡 Scanner un tag NFC",
-        url=f"/app/static/nfc.html?return={app_url}"
-    )
-    st.title(":material/nfc: Scanner une bobine NFC")
-    st.markdown(
-        """
-        > ⚠️ **Compatibilité** : Web NFC fonctionne uniquement sur **Android + Chrome**.  
-        > Assure-toi que l'appli est servie en **HTTPS** (ou sur `localhost` pour les tests).
-        """
-    )
+    
+    if not st.session_state.nfc_uid:
+        st.subheader("Étape 1 – Scanner le tag")
+        st.markdown("> ⚠️ **Android + Chrome uniquement**")
+        
+        st.link_button(
+            "📡 Scanner un tag NFC",
+            url=f"/app/static/nfc.html?return={app_url}"
+        )
 
-    # ── Initialise la session ────────────────────────────────
-    if "nfc_uid" not in st.session_state:
-        st.session_state.nfc_uid = None
-    if "nfc_spool" not in st.session_state:
-        st.session_state.nfc_spool = None
+        # Fallback saisie manuelle
+        with st.expander("✏️ Saisie manuelle de l'UID (fallback desktop)"):
+            uid_manuel = st.text_input("UID NFC", placeholder="ex: 04:AB:12:CD:EF:00:01")
+            if st.button("Rechercher", key="btn_manuel"):
+                st.session_state.nfc_uid = uid_manuel.strip().upper()
+                st.rerun()
 
-    # ── Zone scanner NFC ────────────────────────────────────
-    st.subheader("Étape 1 – Scanner le tag")
-    nfc_scanner_component()   # affiche le bouton + feedback visuel JS
-
-    # ── Saisie manuelle de l'UID (fallback / desktop) ────────
-    with st.expander(" Saisie manuelle de l'UID (fallback desktop)"):
-        uid_manuel = st.text_input("UID NFC", placeholder="ex: 04:AB:12:CD:EF:00:01")
-        if st.button("Rechercher", key="btn_manuel"):
-            st.session_state.nfc_uid = uid_manuel.strip().upper()
-
-    # ── Réception de l'UID depuis le composant JS ────────────
-    # Streamlit ne peut pas écouter nativement postMessage,
-    # donc on utilise une URL query param comme pont.
-    # Sur mobile, l'utilisateur appuie sur un bouton généré
-    # dans le JS qui recharge la page avec ?nfc_uid=XXXX
-    #
-    # Solution alternative propre : on expose un petit champ
-    # caché mis à jour par JS via st.query_params (Streamlit ≥ 1.30)
-    try:
-        params = st.query_params
-        if "nfc_uid" in params:
-            st.session_state.nfc_uid = params["nfc_uid"].upper()
-            st.query_params.clear()
-            st.rerun()  # ← recharge proprement sans l'UID dans l'URL
-    except Exception:
-        pass  # ancienne version de Streamlit, on ignore
-
-    # ── Recherche en base dès qu'on a un UID ────────────────
+    # Affichage de la bobine si UID disponible
     if st.session_state.nfc_uid:
         uid = st.session_state.nfc_uid
         st.info(f"🔎 Recherche de la bobine avec l'UID : `{uid}`")
 
         spool = get_spool_by_nfc(uid)
-        st.session_state.nfc_spool = spool
 
         if spool is None:
-            st.error(
-                f"❌ Aucune bobine trouvée pour l'UID **{uid}**.\n\n"
-                "Vérifie que le tag est bien enregistré dans la base."
-            )
+            st.error(f"❌ Aucune bobine trouvée pour l'UID **{uid}**.")
             if st.button("🔄 Réinitialiser"):
                 st.session_state.nfc_uid = None
-                st.session_state.nfc_spool = None
                 st.rerun()
         else:
-            # ── Fiche bobine ─────────────────────────────────
             st.success("✅ Bobine trouvée !")
             st.subheader(f":material/inventory_2: {spool['nom_marques']} — {spool['color_name']}")
 
@@ -353,7 +284,6 @@ elif menu == ":material/nfc: Scanner NFC":
                 st.metric("Temp. buse", f"{int(spool['temperature_imp'])} °C")
                 st.metric("Temp. plateau", f"{int(spool['temperature_table'])} °C")
 
-            # Barre de progression
             ratio = max(0.0, min(1.0, float(spool['poids_restant']) / float(spool['initial_weight'])))
             st.progress(ratio, text=f"Remplissage : {ratio*100:.0f}%")
 
@@ -364,44 +294,30 @@ elif menu == ":material/nfc: Scanner NFC":
                 with c3: st.metric("Vit. vol. max", f"{spool['vit_volum_max']} mm³/s")
 
             st.divider()
-
-            # ── Formulaire consommation ───────────────────────
             st.subheader("Étape 2 – Enregistrer une consommation")
+
             with st.form("form_nfc_conso"):
                 nom_projet = st.text_input("Nom du projet imprimé")
                 consommation = st.number_input(
-                    "Poids consommé (g)",
-                    value=10.0,
-                    step=1.0,
-                    min_value=0.1,
-                    max_value=float(spool['poids_restant'])
+                    "Poids consommé (g)", value=10.0, step=1.0,
+                    min_value=0.1, max_value=float(spool['poids_restant'])
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")
 
             if submit_conso:
                 succes = usage_log(
-                    weight_used=consommation,
-                    date_print=date_print,
-                    id_spools=spool['id_spools'],
-                    project_name=nom_projet
+                    weight_used=consommation, date_print=date_print,
+                    id_spools=spool['id_spools'], project_name=nom_projet
                 )
                 if succes:
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
                     time.sleep(1.5)
-                    st.session_state.nfc_uid = None   # reset pour prochain scan
-                    st.session_state.nfc_spool = None
+                    st.session_state.nfc_uid = None
                     st.rerun()
                 else:
                     st.error("Erreur lors de l'enregistrement en base.")
 
             if st.button("🔄 Scanner une autre bobine"):
                 st.session_state.nfc_uid = None
-                st.session_state.nfc_spool = None
                 st.rerun()
-
-
-#----- 8.Analyse 
-
-#elif menu ==  ":material/analytics: Statistiques & Analyse":
-    
