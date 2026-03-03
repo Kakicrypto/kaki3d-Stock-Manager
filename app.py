@@ -40,18 +40,29 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Gestion de la redirection NFC
+if st.session_state.get("redirect_to"):
+    target = st.session_state.redirect_to
+    st.session_state.redirect_to = None
+    st.query_params["page"] = target
+    st.rerun()
+
 st.sidebar.title("Menu")
 menu = st.sidebar.radio(
-    "Navigation",
-    [
+    pages =[
         ":material/inventory_2: État du stock",
         ":material/add_circle: Ajouter une bobine",
         ":material/analytics: Statistiques & Analyse",
         ":material/tune: Modifier une bobine",
         ":material/monitor_weight: Consommation",
         ":material/nfc: Scanner NFC"
-    ],
-    key="menu"
+    ]
+    default = 0
+if st.query_params.get("page") == "ajout":
+    default = 1
+    st.query_params.clear()
+
+menu = st.sidebar.radio("Navigation", pages, index=default)
 )
 
 # --- 1. ÉTAT DU STOCK ---
@@ -272,7 +283,7 @@ elif menu == ":material/nfc: Scanner NFC":
             st.error(f"❌ Aucune bobine trouvée pour l'UID **{uid}**.")
             st.session_state.nfc_ajout = uid
             st.session_state.nfc_uid = None  # ← reset le scan
-            st.session_state.menu = ":material/add_circle: Ajouter une bobine" #<-- accés au menu ajout bobine
+            st.session_state.redirect_to = "ajout"
             st.rerun()
             if st.button("🔄 Réinitialiser"):
                 st.session_state.nfc_uid = None
