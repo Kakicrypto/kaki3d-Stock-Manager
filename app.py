@@ -247,7 +247,7 @@ elif menu == ":material/nfc: Scanner NFC":
         
         st.link_button(
             "📡 Scanner un tag NFC",
-            url=f"/app/static/nfc.html?return={app_url}"
+            url=f"https://kaki3d-stock-manager.streamlit.app/app/static/nfc.html?return={app_url}"
         )
 
         # Fallback saisie manuelle
