@@ -51,6 +51,7 @@ menu = st.sidebar.radio(
         ":material/monitor_weight: Consommation",
         ":material/nfc: Scanner NFC"
     ]
+    key="menu"
 )
 
 # --- 1. ÉTAT DU STOCK ---
