@@ -79,8 +79,6 @@ elif st.query_params.get("page") == "nfc":
     default = 5
     st.query_params.clear()
 
-menu = st.sidebar.radio("Navigation", pages, index=default)
-# Menu radio
 st.sidebar.title("Menu")
 menu = st.sidebar.radio("Navigation", pages, index=default)
 
