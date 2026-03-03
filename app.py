@@ -93,14 +93,15 @@ elif menu == ":material/add_circle: Ajouter une bobine":
             st.session_state.id_mat = get_or_create_id("materials", "type_materials", nouvelle_matiere)
     else:
         st.session_state.id_mat = dict_matieres[choix_matiere]
+    if "nfc_ajout" not in st.session_state:
+        st.session_state.nfc_ajout = None
 
     with st.form("form_spool", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
             brand_name = st.text_input("Marque (ex: Prusament, Esun)")
             color = st.text_input("Nom de la couleur")
-            if st.session_state.nfc_ajout :
-                nfc = st.text_input("ID Tag NFC", value=st.session_state.get("nfc_ajout", ""))
+            nfc = st.text_input("ID Tag NFC", value=st.session_state.get("nfc_ajout", ""))
         with col2:
             w_init = st.number_input("Poids initial (g)", value=1000.0, step=1.0)
             w_empty = st.number_input("Poids bobine vide (g)", value=200.0, step=1.0)
