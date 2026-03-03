@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material
 import time 
 import datetime
 import base64
 from config_custom import pseudo
+import plotly.express as px
 
 # Configuration de la page
 st.set_page_config(page_title="Mon Stock de Filament - Kaki3D", layout="wide")
@@ -169,9 +170,9 @@ elif menu == ":material/add_circle: Ajouter une bobine":
 # --- 3. STATISTIQUES ---
 elif menu == ":material/analytics: Statistiques & Analyse":
     st.title(":material/analytics: Statistiques")
-    st.write("C'est ici qu'on mettra tes futurs graphiques de Data Analyst !")
-    st.info("Prochaine étape : Ajouter un graphique de consommation par mois ou par matière.")
-
+    data = get_stats_by_material()
+    df_stat = pd.DataFrame(data)
+    #px.bar(df_stat, x=)
 # --- 4. MODIFIER UNE BOBINE ---
 elif menu == ":material/tune: Modifier une bobine":
     if st.session_state.get('update_success'):
