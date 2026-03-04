@@ -2,7 +2,7 @@
 
 CREATE TABLE public.materials (
                 id_materials INTEGER NOT NULL GENERATED always AS IDENTITY PRIMARY KEY,
-                type_materials VARCHAR(10) NOT NULL,
+                type_materials VARCHAR(50) NOT NULL,
                 density numeric (4,2)
                 
 );
@@ -16,7 +16,7 @@ CREATE TABLE public.marques (
 
 CREATE TABLE public.spools (
                 id_spools INTEGER NOT null GENERATED always AS IDENTITY PRIMARY KEY,
-                nfc_id VARCHAR(255) NOT NULL,
+                nfc_id VARCHAR(255),
                 id_materials INTEGER NOT null references public.materials(id_materials),
                 id_marques INTEGER NOT null references public.marques(id_marques),
                 color_name VARCHAR(100),

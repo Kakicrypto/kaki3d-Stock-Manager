@@ -113,16 +113,18 @@ elif menu == ":material/add_circle: Ajouter une bobine":
     liste_matieres_brute = get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
-    options_avec_ajout = noms_matieres + ["Ajouter une nouvelle matière..."]
+    c1,c2,c3 = st.columns(3)
+    with c1:
+        options_avec_ajout = noms_matieres + ["Ajouter une nouvelle matière..."]
+        choix_matiere = st.selectbox("Choisir la matière", options=options_avec_ajout)
 
-    choix_matiere = st.selectbox("Choisir la matière", options=options_avec_ajout)
-
-    if choix_matiere == "Ajouter une nouvelle matière...":
-        nouvelle_matiere = st.text_input("Nom de la nouvelle matière (ex: Carbon Fiber)")
-        if nouvelle_matiere:
-            st.session_state.id_mat = get_or_create_id("materials", "type_materials", nouvelle_matiere)
-    else:
-        st.session_state.id_mat = dict_matieres[choix_matiere]
+        if choix_matiere == "Ajouter une nouvelle matière...":
+            nouvelle_matiere = st.text_input("Nom de la nouvelle matière (ex: Carbon Fiber)")
+            if nouvelle_matiere:
+                st.session_state.id_mat = get_or_create_id("materials", "type_materials", nouvelle_matiere)
+                st.session_state.nom_mat_temp = (nouvelle_matiere)
+        elif choix_matiere:
+            st.session_state.id_mat = dict_matieres[choix_matiere]
     if "nfc_ajout" not in st.session_state:
         st.session_state.nfc_ajout = None
 
@@ -152,6 +154,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         
         if st.form_submit_button("🚀 Enregistrer en base"):
             id_mat = st.session_state.get("id_mat")
+            st.write(f"DEBUG id_mat = {id_mat}")  # ← ajoute ça temporairement
             if brand_name and color and id_mat:
                 id_m = get_or_create_id("marques", "nom_marques", brand_name)
                 if add_spool(

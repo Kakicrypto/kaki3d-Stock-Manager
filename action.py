@@ -13,6 +13,7 @@ def add_spool(nfc_id, color_name, initial_weight, empty_weight, diametre,
               temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
               id_marques, id_materials):
     connexion = get_connection()
+    nfc_id = nfc_id if nfc_id else ""
     if connexion:
         try:
             with connexion:
