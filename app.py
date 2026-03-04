@@ -234,14 +234,14 @@ elif menu == ":material/tune: Modifier une bobine":
             st.subheader("Paramètres techniques (Slicer)")
             c1, c2, c3 = st.columns(3)
         with c1:
-            nouvelle_temp = st.number_input("Temperature buse", value=float(choix['temperature_imp']))
-            nouvelle_temp_tab = st.number_input("Temperature plateau", value=float(choix['temperature_table']))
+            nouvelle_temp = st.number_input("Temperature buse (°C)", value=float(choix['temperature_imp']))
+            nouvelle_temp_tab = st.number_input("Temperature plateau (°C)", value=float(choix['temperature_table']))
         with c2:
-            nouv_vit_imp = st.number_input("Vitesse impression", value=float(choix['vit_imp']))
-            nouveau_debit = st.number_input("Débit", value=float(choix['debit']))
+            nouv_vit_imp = st.number_input("Vitesse impression (mm/s)", value=float(choix['vit_imp']))
+            nouveau_debit = st.number_input("Débit (%)", value=float(choix['debit']))
         with c3:
-            nouvelle_PA = st.number_input("Pressure advance", value=float(choix['pressure_advance']))
-            nouvelle_Vmax = st.number_input("Vitesse volumetrique", value=float(choix['vit_volum_max']))
+            nouvelle_PA = st.number_input("Pressure advance ", value=float(choix['pressure_advance']))
+            nouvelle_Vmax = st.number_input("Vitesse volumetrique (mm³/s)", value=float(choix['vit_volum_max']))
         with c1:
             submit = st.form_submit_button("Enregistrer les modifications")
         if submit:
