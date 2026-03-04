@@ -178,7 +178,8 @@ elif menu == ":material/analytics: Statistiques & Analyse":
     df_material = pd.DataFrame(data_material)
     df_project = pd.DataFrame(data_project)
     with c1 : 
-        fig = px.bar(df_material,
+        if not df_material.empty:
+            fig = px.bar(df_material,
                     x="type_materials",
                     y= "poids_total", 
                     color="type_materials",
@@ -186,25 +187,27 @@ elif menu == ":material/analytics: Statistiques & Analyse":
                     labels= {"type_materials":"Matière", "poids_total":"Poid en stock"}, 
                     text_auto=True
                     )
-        st.plotly_chart(fig)
+            st.plotly_chart(fig)
     with c2 :
-        fig_project = px.bar(df_project,
+        if not df_project.empty:
+            fig_project = px.bar(df_project,
                              x="project_name",
                              y= "total_consomme",
                              title="consommation par projet",
                              color_discrete_sequence=["#00FFC8"],
                              labels={"project_name":"Nom du projet", "total_consomme":"Consomation"},
                              text_auto=True)
-        st.plotly_chart(fig_project)
-    fig_month = px.line(df_month, 
+            st.plotly_chart(fig_project)
+    if not df_month.empty:
+        fig_month = px.line(df_month, 
                         x="mois", y="total_consomme",
                         title="Consomation dans le temps",
                         color_discrete_sequence=["#00FFC8"],
                         labels={"total_consomme":"Consomation"})
-    fig_month.update_xaxes(
-    dtick="M1",                    # ← un tick par mois
-    tickformat="%b %Y")            # ← format "Jan 2026"
-    st.plotly_chart(fig_month)
+        fig_month.update_xaxes(
+        dtick="M1",                    # ← un tick par mois
+        tickformat="%b %Y")            # ← format "Jan 2026"
+        st.plotly_chart(fig_month)
 
 # --- 4. MODIFIER UNE BOBINE ---
 elif menu == ":material/tune: Modifier une bobine":

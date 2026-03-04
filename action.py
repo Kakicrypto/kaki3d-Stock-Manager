@@ -246,12 +246,13 @@ def get_stats_by_project():
         try:
             with connexion.cursor(cursor_factory=RealDictCursor) as curs:
                 curs.execute("""
-                SELECT 
+                SELECT
                     project_name,
                     SUM(weight_used) AS total_consomme
                 FROM public.usage_logs
                 GROUP BY project_name
-                ORDER BY total_consomme DESC;
+                ORDER BY total_consomme DESC
+                LIMIT 6;
                 """)
                 return curs.fetchall()
         finally:
