@@ -66,9 +66,15 @@ pip install -r requirements.txt
 
 Crée un projet sur [Supabase](https://supabase.com) et exécute le fichier `script-creation-table-inventaire.sql` dans l'éditeur SQL de Supabase.
 
+recupere tes identifiant de connexion 
+![alt text](image.png)
+![alt text](image-2.png)
+
 ### 5. Configure les secrets
 
-Crée le fichier `.streamlit/secrets.toml` (ne jamais commiter ce fichier !) :
+Crée le fichier `.streamlit/secrets.toml` (ne jamais commiter ce fichier !) 
+
+insert les informations de l'etape 4 dans le fichier
 
 ```toml
 [database]
