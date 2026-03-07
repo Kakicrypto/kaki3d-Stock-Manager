@@ -66,9 +66,15 @@ pip install -r requirements.txt
 
 Crée un projet sur [Supabase](https://supabase.com) et exécute le fichier `script-creation-table-inventaire.sql` dans l'éditeur SQL de Supabase.
 
+change la methode de connection en "transaction pooler"
+
+![alt text](image-3.png)
+
 recupere tes identifiant de connexion 
+
 ![alt text](image.png)
 ![alt text](image-2.png)
+
 
 ### 5. Configure les secrets
 
@@ -78,11 +84,11 @@ insert les informations de l'etape 4 dans le fichier
 
 ```toml
 [database]
-host     = "db.XXXX.supabase.co"
+host     = "XXXXXXXX"
 dbname   = "postgres"
-user     = "postgres"
+user     = "postgres.xxxxx"
 password = "TON_MOT_DE_PASSE"
-port     = "5432"
+port     = "6543"
 ```
 
 ### 6. Modification de votre configuration 
