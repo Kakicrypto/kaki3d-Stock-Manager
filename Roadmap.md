@@ -1,50 +1,149 @@
-🚀 Projet : Gestionnaire de Stock Filament Kaki3D
-🧑‍💻 Développeur : Quentin (Data Analyst / Dev IA en reconversion)
-📅 État d'avancement au : 23 Février 2026
-✅ PHASE 1 : Fondations & Base de Données (Terminé)
-[x] Configuration de PostgreSQL.
+# 🚀 Roadmap — Kaki3D Stock Manager
 
-[x] Création du schéma relationnel (Tables : spools, marques, materials, usage_logs).
+**Développeur :** Quentin (Data Analyst / Dev IA en reconversion)  
+**Dernière mise à jour :** Mars 2026
 
-[x] Connexion Python <-> SQL sécurisée dans database.py.
+---
 
-[x] Résolution des problèmes d'encodage (le fameux bug UTF-8).
+## ✅ PHASE 1 — Fondations & Base de Données *(Terminé)*
 
-✅ PHASE 2 : Interface Streamlit & Navigation (Terminé)
-[x] Mise en place de la Sidebar (barre latérale).
+- [x] Configuration PostgreSQL (local → Supabase cloud)
+- [x] Schéma relationnel : `spools`, `marques`, `materials`, `usage_logs`
+- [x] Connexion Python ↔ SQL sécurisée (`database.py` + `st.secrets`)
+- [x] Migration vers Transaction Pooler (IPv4, port 6543) pour Streamlit Cloud
+- [x] RLS désactivé sur toutes les tables
+- [x] Résolution bug encodage UTF-8
+- [x] Script SQL `script-creation-table-inventaire.sql` pour nouveaux utilisateurs
 
-[x] Système de navigation par menus (radio).
+---
 
-[x] Affichage de l'inventaire sous forme de tableau (dataframe).
+## ✅ PHASE 2 — Interface Streamlit & Navigation *(Terminé)*
 
-[x] Intégration visuelle des jauges de stock (barres de progression).
+- [x] Sidebar + système de navigation par menus (`radio`)
+- [x] Affichage inventaire : cards avec barres de progression + tableau DataFrame
+- [x] Header personnalisé avec logo et pseudo (`config_custom.py`)
+- [x] Thème sombre néon configuré (`.streamlit/config.toml`)
 
-✅ PHASE 3 : Automatisation de la Saisie (En cours...)
-[x] Formulaire d'ajout complet avec tous les paramètres techniques (Temp, PA, Débit...).
+---
 
-[x] Fonction "Intelligente" get_or_create_id : Ajout automatique d'une marque ou matière si elle n'existe pas.
+## ✅ PHASE 3 — CRUD Complet *(Terminé)*
 
-[x] Action immédiate : Finaliser le menu ⚙️ Modifier une bobine pour corriger des erreurs de saisie.
+- [x] Formulaire d'ajout de bobine avec tous les paramètres slicer
+- [x] Fonction `get_or_create_id` — création automatique marque/matière si inexistante
+- [x] Correction bug : matière non sauvegardée au submit (`session_state`)
+- [x] Formulaire de modification de bobine
+- [x] Enregistrement des consommations (`usage_logs`) + déduction poids restant
+- [x] Champ NFC optionnel (`nullable` après correction BDD)
 
-[ ] Ajout de la fonction consomation .
+---
 
-[ ] Ajout du poids total restant (voir par couleur )
+## ✅ PHASE 4 — Intégration NFC *(Terminé)*
 
-🛠️ PHASE 4 : Intégration NFC & Hardware (Prochaine étape)
-[ ] Lecture de l'UID NFC pour identifier une bobine instantanément.
+- [x] Page NFC statique `nfc.html` hébergée sur GitHub Pages (contourne la limite iframe Streamlit)
+- [x] Lecture UID NFC via Web NFC API (Android Chrome uniquement)
+- [x] Redirection automatique vers Streamlit avec UID via query params
+- [x] Affichage fiche bobine complète après scan
+- [x] Formulaire de consommation directement depuis le scan
+- [x] Redirection vers formulaire Ajout si UID non reconnu + pré-remplissage NFC
+- [x] Fallback saisie manuelle (desktop, iOS, lecteur USB HID)
+- [x] Correction redirection post-scan (interception `query_params` en tête d'`app.py`)
 
-[ ] Affichage d'un "Dashboard Flash" dès qu'une bobine est scannée.
+---
 
-[ ] Automatisation du curseur dans le champ de recherche pour un scan fluide.
+## ✅ PHASE 5 — Statistiques *(Terminé)*
 
-📊 PHASE 5 : Analyse de Données & IA (Le cœur du métier)
-[ ] Création des graphiques de consommation (Poids utilisé vs Temps).
+- [x] Graphique stock par matière (bar chart Plotly)
+- [x] Graphique consommation par projet (top 6, trié DESC)
+- [x] Graphique consommation dans le temps (line chart, axe mensuel)
+- [x] Gestion données vides (`df.empty` check)
 
-[ ] Alertes stock bas : Notifier quand il reste moins de X grammes.
+---
 
-[ ] Module IA : Prédire si le stock est suffisant pour un fichier G-Code donné (en analysant le poids estimé par le slicer).
+## ✅ PHASE 6 — Déploiement & Sécurité *(Terminé)*
 
-📝 Notes & Rappels Techniques
-💡 Rappel Encodage : Toujours garder # -*- coding: utf-8 -*- en haut des fichiers.
-💡 Données : Poids Initial = Filament seul (1000g). Poids Bobine Vide = Tare du support.
-💡 SQL : Toujours utiliser des requêtes paramétrées (%s) pour éviter que la base ne crash à cause d'un caractère spécial.
+- [x] Déploiement Streamlit Cloud : [kaki3d-stock-manager.streamlit.app](https://kaki3d-stock-manager.streamlit.app)
+- [x] CI/CD automatique depuis branche `main` GitHub
+- [x] Protection branche `main` via Ruleset (PR obligatoire)
+- [x] Workflow : feature branches → PR → merge main
+- [x] Requêtes SQL 100% paramétrées (anti-injection)
+- [x] Whitelist `TABLES_AUTORISEES` dans `get_or_create_id()`
+- [x] `requirements.txt` nettoyé (outils dev retirés)
+- [x] README complet avec instructions d'installation
+
+---
+
+## 🔄 EN COURS
+
+- [ ] Phase bêta test — 1er testeur actif
+- [ ] Correction script SQL pour nouveaux utilisateurs (syntaxe `numeric`)
+
+---
+
+## 📋 À FAIRE — Court terme
+
+- [ ] Améliorer la navigation post-scan NFC (éviter le passage par l'inventaire au retour)
+- [ ] Support iOS via lecteur NFC USB HID (saisie automatique dans le champ texte)
+- [ ] Supprimer le `st.write(f"DEBUG id_mat = {id_mat}")` laissé dans le formulaire d'ajout
+
+---
+
+## ⚖️ PHASE 7 — KakiScale : Balance Connectée *(À venir)*
+
+> Inspiré du projet PandaBalance v2 (MakerWorld), entièrement adapté pour s'intégrer nativement à Kaki3D.  
+> **Hardware cible :** ESP32 + cellule de charge 5kg + HX711 + lecteur NFC PN532 (I²C) + boîtier imprimé 3D.  
+> **Principe :** poser une bobine sur la balance → l'ESP32 lit le NFC + pèse → envoie les données à Kaki3D automatiquement.
+
+### 7.1 — Hardware & Firmware ESP32
+- [ ] Commande composants : ESP32, cellule de charge 5kg, module HX711, PN532 NFC
+- [ ] Impression 3D du boîtier (adapter le design PandaBalance v2)
+- [ ] Câblage et test bench : HX711 → lecture poids brut en Serial Monitor
+- [ ] Calibration de la cellule de charge (tare + facteur d'échelle)
+- [ ] Intégration PN532 : lecture UID NFC depuis l'ESP32 via I²C
+- [ ] Calcul poids filament réel : `poids_total_mesuré - poids_bobine_vide`
+- [ ] Connexion WiFi et envoi HTTP POST (JSON) vers l'API Kaki3D
+
+### 7.2 — API REST côté Kaki3D
+- [ ] Créer un endpoint `/api/scale` recevant `{ uid, poids_mesure }` depuis l'ESP32
+- [ ] Identifier la bobine via l'UID → récupérer `empty_spool_weight` depuis Supabase
+- [ ] Ajouter une colonne `derniere_pesee` + `date_pesee` dans la table `spools`
+- [ ] Sécuriser l'endpoint avec une clé API partagée (header `X-Api-Key`)
+
+### 7.3 — Refonte de la mesure du poids restant
+- [ ] Afficher deux sources dans l'inventaire : poids calculé (actuel) vs poids mesuré (balance)
+- [ ] Bouton "Recaler" : synchroniser le poids calculé sur le poids mesuré
+- [ ] Horodater chaque pesée et l'afficher dans la fiche bobine
+- [ ] Gérer le cas bobine inconnue : redirection vers formulaire d'ajout avec NFC pré-rempli
+
+### 7.4 — UX & Affichage Streamlit
+- [ ] Nouvelle section "Balance" dans la sidebar
+- [ ] Affichage de la dernière pesée en temps réel (polling léger)
+- [ ] Indicateur d'écart : alerte visuelle si dérive entre poids calculé et poids mesuré > seuil configurable
+
+---
+
+## 🗺️ À FAIRE — Moyen terme
+
+- [ ] Système d'authentification (multi-utilisateurs sur instance partagée)
+- [ ] Enrichir les statistiques (filtres par période, export CSV)
+- [ ] Améliorer l'UX mobile (responsive)
+- [ ] Tests unitaires sur les fonctions `action.py`
+- [ ] Alertes stock bas : notification quand il reste moins de X grammes
+
+---
+
+## 🤖 À FAIRE — Long terme (IA)
+
+- [ ] Module IA : prédire si le stock est suffisant pour un fichier G-Code donné
+- [ ] Analyse poids estimé par le slicer vs poids réel mesuré par la balance
+- [ ] Tableau de bord analytique avancé (tendances, prévisions)
+- [ ] Détection automatique des anomalies de consommation (dérive poids calculé vs mesuré)
+
+---
+
+## 📝 Notes techniques
+
+- Toujours garder `# -*- coding: utf-8 -*-` en haut des fichiers Python
+- Poids Initial = filament seul (1000g) / Poids Bobine Vide = tare du support
+- Toujours utiliser des requêtes paramétrées (`%s`) — jamais de concaténation de strings en SQL
+- Connexion via Transaction Pooler Supabase (port 6543) — obligatoire sur Streamlit Cloud
+- ESP32 : utiliser `HTTPClient` (Arduino) pour les appels REST, `ArduinoJson` pour sérialiser le payload
