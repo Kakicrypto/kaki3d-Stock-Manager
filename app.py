@@ -81,14 +81,16 @@ elif st.query_params.get("page") == "nfc":
     st.query_params.clear()
 
 st.sidebar.title("Menu")
-menu = st.sidebar.radio("Navigation", pages, index=default)
+#st.selectbox
+menu = st.sidebar.radio("", pages, index=default)
+toutes_les_couleurs = [element["color_name"] for element in data_global]
+couleur_unique = list(set(toutes_les_couleurs))
 
 # --- 1. ÉTAT DU STOCK ---
 if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
     data = get_inventory()
     data_global = get_aggregated_inventory()
-
     if data_global:
         cols = st.columns(4)
         for i, b in enumerate(data_global):
@@ -103,8 +105,11 @@ if menu == ":material/inventory_2: État du stock":
         st.info("Aucune donnée à agréger.")
     st.divider()
     if data:
+        toutes_les_couleurs = [element["color_name"] for element in data]
+        couleur_unique = list(set(toutes_les_couleurs))
+        option = ["toutes"] + toutes_les_couleurs
         df = pd.DataFrame(data)
-        st.dataframe(df, use_container_width=True)
+        st.expander("Table des bobine", st.dataframe(df, use_container_width=True), width="stretch")
 
 # --- 2. AJOUT D'UNE BOBINE ---
 elif menu == ":material/add_circle: Ajouter une bobine":
@@ -194,12 +199,12 @@ elif menu == ":material/analytics: Statistiques & Analyse":
     with c2 :
         if not df_project.empty:
             fig_project = px.bar(df_project,
-                             x="project_name",
-                             y= "total_consomme",
-                             title="consommation par projet",
-                             color_discrete_sequence=["#00FFC8"],
-                             labels={"project_name":"Nom du projet", "total_consomme":"Consomation"},
-                             text_auto=True)
+                            x="project_name",
+                            y= "total_consomme",
+                            title="consommation par projet",
+                            color_discrete_sequence=["#00FFC8"],
+                            labels={"project_name":"Nom du projet", "total_consomme":"Consomation"},
+                            text_auto=True)
             st.plotly_chart(fig_project)
     if not df_month.empty:
         fig_month = px.line(df_month, 

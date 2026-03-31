@@ -15,3 +15,6 @@ obselete/
 *.architect
 schema relationel .jpg
 Script calcul poid restant.sql
+
+#Fichier 3D
+*.3mf

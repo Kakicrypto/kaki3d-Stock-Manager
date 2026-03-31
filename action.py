@@ -52,7 +52,7 @@ def get_aggregated_inventory():
                     mat.type_materials,
                     s.color_name,
                     SUM(s.initial_weight) AS total_initial,
-                    (SUM(s.initial_weight) - COALESCE(SUM(u.weight_used), 0)) AS total_restant
+                    (SUM(s.initial_weight - empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS total_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
@@ -98,7 +98,7 @@ def get_inventory():
                     s.*, 
                     m.nom_marques, 
                     mat.type_materials,
-                    (s.initial_weight - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
+                    ((s.initial_weight-s.empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
@@ -206,9 +206,9 @@ def get_spool_by_nfc(nfc_uid: str):
                 s.*,
                 m.nom_marques,
                 mat.type_materials,
-                (s.initial_weight - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
+                ((s.initial_weight - empty_spool_weigt) - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
             FROM public.spools s
-            JOIN public.marques m ON s.id_marques = m.id_marques
+            JOIN public.marques m ON s.id_marques = m.id_marques 
             JOIN public.materials mat ON s.id_materials = mat.id_materials
             LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
             WHERE s.nfc_id ILIKE %s

@@ -147,3 +147,6 @@
 - Toujours utiliser des requêtes paramétrées (`%s`) — jamais de concaténation de strings en SQL
 - Connexion via Transaction Pooler Supabase (port 6543) — obligatoire sur Streamlit Cloud
 - ESP32 : utiliser `HTTPClient` (Arduino) pour les appels REST, `ArduinoJson` pour sérialiser le payload
+
+## Securité 
+- [] faire une api entre l'appli et la BD
