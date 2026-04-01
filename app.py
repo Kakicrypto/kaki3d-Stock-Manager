@@ -81,35 +81,40 @@ elif st.query_params.get("page") == "nfc":
     st.query_params.clear()
 
 st.sidebar.title("Menu")
-#st.selectbox
 menu = st.sidebar.radio("", pages, index=default)
-toutes_les_couleurs = [element["color_name"] for element in data_global]
-couleur_unique = list(set(toutes_les_couleurs))
 
 # --- 1. ÉTAT DU STOCK ---
 if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
     data = get_inventory()
     data_global = get_aggregated_inventory()
-    if data_global:
-        cols = st.columns(4)
-        for i, b in enumerate(data_global):
-            with cols[i % 4]:
-                total_i = float(b['total_initial'])
-                total_r = float(b['total_restant'])
-                ratio = max(0.0, min(1.0, total_r / total_i)) if total_i > 0 else 0
-                st.metric(f"{b['nom_marques']} - {b['color_name']}", f"{int(total_r)}g")
-                st.progress(ratio)
-                st.caption(f"Type: {b['type_materials']}")
-    else:
-        st.info("Aucune donnée à agréger.")
-    st.divider()
     if data:
         toutes_les_couleurs = [element["color_name"] for element in data]
         couleur_unique = list(set(toutes_les_couleurs))
-        option = ["toutes"] + toutes_les_couleurs
+        choix_couleur = ["toutes"] + couleur_unique
         df = pd.DataFrame(data)
-        st.expander("Table des bobine", st.dataframe(df, use_container_width=True), width="stretch")
+    else:
+        choix_couleur = ["toutes"]
+    with st.sidebar : 
+        filtre_couleur = st.selectbox ("Choix des couleurs", choix_couleur)
+    if data_global:
+        cols = st.columns(4)
+        col_index = 0
+        for i, b in enumerate(data_global):
+            if filtre_couleur == "toutes" or b["color_name"] == filtre_couleur:
+                with cols[col_index % 4]:
+                    total_i = float(b['total_initial'])
+                    total_r = float(b['total_restant'])
+                    ratio = max(0.0, min(1.0, total_r / total_i)) if total_i > 0 else 0
+                    st.metric(f"{b['nom_marques']} - {b['color_name']}", f"{int(total_r)}g")
+                    st.progress(ratio)
+                    st.caption(f"Type: {b['type_materials']}")
+                    col_index += 1
+    else:
+        st.info("Aucune donnée à agréger.")
+    st.divider()
+    with st.expander("Table des bobine"):
+        st.dataframe(df, use_container_width=True)
 
 # --- 2. AJOUT D'UNE BOBINE ---
 elif menu == ":material/add_circle: Ajouter une bobine":
