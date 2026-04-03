@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_all_bobine_vide
 import time 
 import datetime
 import base64
@@ -124,7 +124,7 @@ if menu == ":material/inventory_2: État du stock":
 # --- 2. AJOUT D'UNE BOBINE ---
 elif menu == ":material/add_circle: Ajouter une bobine":
     st.title(":material/add_circle: Enregistrer un nouveau filament")
-
+    liste_bobine_vide = get_all_bobine_vide()
     liste_matieres_brute = get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
@@ -132,7 +132,6 @@ elif menu == ":material/add_circle: Ajouter une bobine":
     with c1:
         options_avec_ajout = noms_matieres + ["Ajouter une nouvelle matière..."]
         choix_matiere = st.selectbox("Choisir la matière", options=options_avec_ajout)
-
         if choix_matiere == "Ajouter une nouvelle matière...":
             nouvelle_matiere = st.text_input("Nom de la nouvelle matière (ex: Carbon Fiber)")
             if nouvelle_matiere:
@@ -140,6 +139,10 @@ elif menu == ":material/add_circle: Ajouter une bobine":
                 st.session_state.nom_mat_temp = (nouvelle_matiere)
         elif choix_matiere:
             st.session_state.id_mat = dict_matieres[choix_matiere]
+    with c2:
+        filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
+        if filtre_bobine :
+            st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
     if "nfc_ajout" not in st.session_state:
         st.session_state.nfc_ajout = None
 
@@ -151,7 +154,6 @@ elif menu == ":material/add_circle: Ajouter une bobine":
             nfc = st.text_input("ID Tag NFC", value=st.session_state.get("nfc_ajout", ""))
         with col2:
             w_init = st.number_input("Poids initial (g)", value=1000.0, step=1.0)
-            w_empty = st.number_input("Poids bobine vide (g)", value=200.0, step=1.0)
             diam = st.number_input("Diamètre (mm)", value=1.75, step=0.01)
 
         st.divider()
@@ -169,12 +171,13 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         
         if st.form_submit_button("🚀 Enregistrer en base"):
             id_mat = st.session_state.get("id_mat")
-            st.write(f"DEBUG id_mat = {id_mat}")  # ← ajoute ça temporairement
-            if brand_name and color and id_mat:
-                id_m = get_or_create_id("marques", "nom_marques", brand_name)
+            id_bobine_vide= st.session_state.get("id_bobine_vide")
+            #st.write(f"DEBUG id_mat = {id_mat}")  # ← ajoute ça temporairement
+            if brand_name and color and id_mat and id_bobine_vide:
+                id_m = get_or_create_id("marques", "nom_marques", brand_name, )
                 if add_spool(
                     nfc_id=nfc, color_name=color, initial_weight=w_init,
-                    empty_weight=w_empty, diametre=diam, temp_imp=t_imp,
+                    id_bobine_vide=id_bobine_vide, diametre=diam, temp_imp=t_imp,
                     temp_table=t_tab, debit=deb, pressure_adv=pa,
                     vit_max=vit, id_marques=id_m, id_materials=id_mat, vit_imp=vit_imp
                 ):
@@ -183,7 +186,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
                 else:
                     st.error("Erreur technique lors de l'insertion.")
             else:
-                st.warning("Marque, Matière et Couleur sont obligatoires !")
+                st.warning("Marque, Matière, Couleur et poids bobine vide sont obligatoires !")
 
 # --- 3. STATISTIQUES ---
 elif menu == ":material/analytics: Statistiques & Analyse":
@@ -234,12 +237,18 @@ elif menu == ":material/tune: Modifier une bobine":
     st.session_state.update_success = False
     st.title("Modifier une bobine")
     data = get_inventory()
+    liste_bobine_vide = get_all_bobine_vide()
     c1, c2, _ = st.columns(3)
     if data:
         with c1:
             choix = st.selectbox(
                 label="Sélectionner la bobine à modifier", options=data,
                 format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
+        with c2:
+            filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
+            if filtre_bobine :
+                st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
+                st.session_state.empty_spool_weight = filtre_bobine["poids_bobine"]
         with st.form("edition"):
             nouvelle_couleur = st.text_input("Couleur", value=choix['color_name'])
             nouvelle_marque = st.text_input("Marque", value=choix['nom_marques'])
@@ -262,10 +271,12 @@ elif menu == ":material/tune: Modifier une bobine":
         if submit:
             id_m = get_or_create_id("marques", "nom_marques", nouvelle_marque)
             id_mat = get_or_create_id("materials", "type_materials", nouveau_material)
+            id_bobine_vide = st.session_state.get("id_bobine_vide")
+            empty_spool_weight = st.session_state.get("empty_spool_weight")
             succes = update_spool(
                 id_spools=choix['id_spools'], nfc_id=nouveau_nfc_id,
                 id_materials=id_mat, id_marques=id_m, color_name=nouvelle_couleur,
-                initial_weight=choix['initial_weight'], empty_spool_weight=choix['empty_spool_weight'],
+                initial_weight=choix['initial_weight'], empty_spool_weight=empty_spool_weight, id_bobine_vide=id_bobine_vide,
                 diametre=choix['diametre'], temperature_imp=nouvelle_temp,
                 temperature_table=nouvelle_temp_tab, vit_imp=nouv_vit_imp,
                 debit=nouveau_debit, pressure_advance=nouvelle_PA, vit_volum_max=nouvelle_Vmax
@@ -375,7 +386,7 @@ elif menu == ":material/nfc: Scanner NFC":
                 st.metric("Temp. buse", f"{int(spool['temperature_imp'])} °C")
                 st.metric("Temp. plateau", f"{int(spool['temperature_table'])} °C")
 
-            ratio = max(0.0, min(1.0, float(spool['poids_filament_restant']) / float(spool['initial_weight'])))
+            ratio = max(0.0, min(1.0, float(spool['poids_filament_restant']) / (float(spool['initial_weight']) - float(spool ['poids_bobine']))))
             st.progress(ratio, text=f"Remplissage : {ratio*100:.0f}%")
 
             with st.expander("⚙️ Paramètres Slicer"):
