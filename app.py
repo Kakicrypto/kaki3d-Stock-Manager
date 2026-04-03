@@ -104,11 +104,11 @@ if menu == ":material/inventory_2: État du stock":
         for i, b in enumerate(data_global):
             if filtre_couleur == "toutes" or b["color_name"] == filtre_couleur:
                 with cols[col_index % 4]:
-                    total_i = float(b['total_initial'])
-                    total_r = float(b['total_restant'])
+                    total_i = float(b['poids_filament_initial'])
+                    total_r = float(b['poids_filament_restant'])
                     ratio = max(0.0, min(1.0, total_r / total_i)) if total_i > 0 else 0
                     st.metric(f"{b['nom_marques']} - {b['color_name']}", f"{int(total_r)}g")
-                    fig = px.pie(values=[b["total_restant"], b["total_initial"]-b["total_restant"]], names=["restant", "consommé"], hole=0.5, color_discrete_sequence=["#00FFC8","#161B22"])
+                    fig = px.pie(values=[b["poids_filament_restant"], b["poids_filament_initial"]-b["poids_filament_restant"]], names=["restant", "consommé"], hole=0.5, color_discrete_sequence=["#00FFC8","#161B22"])
                     fig.update_traces(hovertemplate= "%{value}g")
                     fig.update_layout(height=300, showlegend=False)
                     st.plotly_chart(fig)
@@ -239,7 +239,7 @@ elif menu == ":material/tune: Modifier une bobine":
         with c1:
             choix = st.selectbox(
                 label="Sélectionner la bobine à modifier", options=data,
-                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
+                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
         with st.form("edition"):
             nouvelle_couleur = st.text_input("Couleur", value=choix['color_name'])
             nouvelle_marque = st.text_input("Marque", value=choix['nom_marques'])
@@ -290,11 +290,11 @@ elif menu == ":material/monitor_weight: Consommation":
         with c1:
             choix = st.selectbox(
                 label="Sélectionner la bobine utilisée", options=data,
-                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_restant']}g)")
+                format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
         with c1:
             with st.form("Ajout"):
                 nom_projet = st.text_input("Nom du projet imprimé")
-                consommation = st.number_input("Poids consommé (g)", value=100.0, step=1.0, max_value=float(choix['poids_restant']))
+                consommation = st.number_input("Poids consommé (g)", value=100.0, step=1.0, max_value=float(choix['poids_filament_restant']))
                 date_print = st.date_input("Date de l'impression", value=datetime.date.today())
                 submit = st.form_submit_button("Enregistrer la consommation")
             if submit:
@@ -369,13 +369,13 @@ elif menu == ":material/nfc: Scanner NFC":
                 st.metric("Matière", spool['type_materials'])
                 st.metric("Diamètre", f"{spool['diametre']} mm")
             with col2:
-                st.metric("Poids restant", f"{int(spool['poids_restant'])} g")
+                st.metric("Poids restant", f"{int(spool['poids_filament_restant'])} g")
                 st.metric("Poids initial", f"{int(spool['initial_weight'])} g")
             with col3:
                 st.metric("Temp. buse", f"{int(spool['temperature_imp'])} °C")
                 st.metric("Temp. plateau", f"{int(spool['temperature_table'])} °C")
 
-            ratio = max(0.0, min(1.0, float(spool['poids_restant']) / float(spool['initial_weight'])))
+            ratio = max(0.0, min(1.0, float(spool['poids_filament_restant']) / float(spool['initial_weight'])))
             st.progress(ratio, text=f"Remplissage : {ratio*100:.0f}%")
 
             with st.expander("⚙️ Paramètres Slicer"):
@@ -391,7 +391,7 @@ elif menu == ":material/nfc: Scanner NFC":
                 nom_projet = st.text_input("Nom du projet imprimé")
                 consommation = st.number_input(
                     "Poids consommé (g)", value=10.0, step=1.0,
-                    min_value=0.1, max_value=float(spool['poids_restant'])
+                    min_value=0.1, max_value=float(spool['poids_filament_restant'])
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")

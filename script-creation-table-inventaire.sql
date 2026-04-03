@@ -14,6 +14,7 @@ CREATE TABLE public.spools (
     nfc_id VARCHAR(255),
     id_materials INTEGER NOT NULL REFERENCES public.materials(id_materials),
     id_marques INTEGER NOT NULL REFERENCES public.marques(id_marques),
+    id_bobine_vide INTEGER NOT NULL REFERENCES public.bobine_vide(id_bobine_vide),
     color_name VARCHAR(100),
     initial_weight numeric(5,1) DEFAULT 1000,
     empty_spool_weight INTEGER,
@@ -34,4 +35,13 @@ CREATE TABLE public.usage_logs (
     project_name VARCHAR(255)
 );
 
-COMMENT ON TABLE public.usage_logs IS 'historique de consomation';
+COMMENT ON TABLE public.usage_logs IS 'historique de consomation';
+
+CREATE TABLE public.bobine_vide (
+    id_bobine_vide INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    poids_bobine numeric(5,1) DEFAULT 0.0 NOT NULL,
+    type_bobine VARCHAR(255),
+    id_marques INTEGER NOT NULL REFERENCES public.marques(id_marques)
+);
+
+COMMENT ON TABLE public.bobine_vide IS 'Table de poids des bobine vide selon les marque et le type de bobine';

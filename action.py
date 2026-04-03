@@ -10,8 +10,8 @@ TABLES_AUTORISEES = {
 }
 
 def add_spool(nfc_id, color_name, initial_weight, empty_weight, diametre, 
-              temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
-              id_marques, id_materials):
+            temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
+            id_marques, id_materials):
     connexion = get_connection()
     nfc_id = nfc_id if nfc_id else ""
     if connexion:
@@ -51,8 +51,8 @@ def get_aggregated_inventory():
                     m.nom_marques, 
                     mat.type_materials,
                     s.color_name,
-                    SUM(s.initial_weight) AS total_initial,
-                    (SUM(s.initial_weight - empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS total_restant
+                    (SUM(s.initial_weight - empty_spool_weight)) as poids_filament_initial,
+                    (SUM(s.initial_weight - empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
@@ -98,7 +98,7 @@ def get_inventory():
                     s.*, 
                     m.nom_marques, 
                     mat.type_materials,
-                    ((s.initial_weight-s.empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
+                    ((s.initial_weight-s.empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
@@ -163,8 +163,8 @@ def get_or_create_id(table, column, value):
     return None
 
 def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, initial_weight,
-                 empty_spool_weight, diametre, temperature_imp, temperature_table,
-                 debit, pressure_advance, vit_volum_max, vit_imp=0):
+                empty_spool_weight, diametre, temperature_imp, temperature_table,
+                debit, pressure_advance, vit_volum_max, vit_imp=0):
     connexion = get_connection()
     if connexion:
         try:
@@ -194,7 +194,7 @@ def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, initia
 def get_spool_by_nfc(nfc_uid: str):
     """
     Recherche une bobine par son UID NFC.
-    Retourne un dict avec toutes les infos + poids_restant, ou None.
+    Retourne un dict avec toutes les infos + poids_filament_restant, ou None.
     """
     connexion = get_connection()
     if not connexion:
@@ -206,7 +206,7 @@ def get_spool_by_nfc(nfc_uid: str):
                 s.*,
                 m.nom_marques,
                 mat.type_materials,
-                ((s.initial_weight - empty_spool_weigt) - COALESCE(SUM(u.weight_used), 0)) AS poids_restant
+                ((s.initial_weight - empty_spool_weigt) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
             FROM public.spools s
             JOIN public.marques m ON s.id_marques = m.id_marques 
             JOIN public.materials mat ON s.id_materials = mat.id_materials
