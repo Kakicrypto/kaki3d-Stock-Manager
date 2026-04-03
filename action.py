@@ -9,7 +9,7 @@ TABLES_AUTORISEES = {
     "materials": "type_materials"
 }
 
-def add_spool(nfc_id, color_name, initial_weight, empty_weight, diametre, 
+def add_spool(nfc_id, color_name, initial_weight, id_bobine_vide, diametre, 
             temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
             id_marques, id_materials):
     connexion = get_connection()
@@ -20,14 +20,14 @@ def add_spool(nfc_id, color_name, initial_weight, empty_weight, diametre,
                 with connexion.cursor() as curs:
                     requete = """
                     INSERT INTO public.spools (
-                        nfc_id, color_name, initial_weight, empty_spool_weight,
+                        nfc_id, color_name, initial_weight, id_bobine_vide,
                         diametre, temperature_imp, temperature_table, debit,
                         pressure_advance, vit_volum_max, vit_imp, id_marques, id_materials
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
                     """
                     params = (
-                        nfc_id, color_name, initial_weight, empty_weight,
+                        nfc_id, color_name, initial_weight, id_bobine_vide,
                         diametre, temp_imp, temp_table, debit,
                         pressure_adv, vit_max, vit_imp, id_marques, id_materials
                     )
@@ -51,13 +51,15 @@ def get_aggregated_inventory():
                     m.nom_marques, 
                     mat.type_materials,
                     s.color_name,
-                    (SUM(s.initial_weight - empty_spool_weight)) as poids_filament_initial,
-                    (SUM(s.initial_weight - empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
+                    bv.poids_bobine,
+                    (SUM(s.initial_weight - bv.poids_bobine)) as poids_filament_initial,
+                    (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
                 LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
-                GROUP BY m.nom_marques, mat.type_materials, s.color_name
+                LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
+                GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine
                 ORDER BY m.nom_marques;
                 """
                 curs.execute(requete)
@@ -98,12 +100,14 @@ def get_inventory():
                     s.*, 
                     m.nom_marques, 
                     mat.type_materials,
-                    ((s.initial_weight-s.empty_spool_weight) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
+                    bv.poids_bobine,
+                    ((s.initial_weight-bv.poids_bobine) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
                 FROM public.spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
                 LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
-                GROUP BY s.id_spools, m.id_marques, m.nom_marques, mat.id_materials, mat.type_materials
+                LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
+                GROUP BY s.id_spools, m.id_marques, m.nom_marques, mat.id_materials, mat.type_materials, bv.poids_bobine
                 ORDER BY s.id_spools DESC;
                 """
                 curs.execute(requete)
@@ -162,7 +166,7 @@ def get_or_create_id(table, column, value):
             connexion.close()
     return None
 
-def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, initial_weight,
+def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, id_bobine_vide,
                 empty_spool_weight, diametre, temperature_imp, temperature_table,
                 debit, pressure_advance, vit_volum_max, vit_imp=0):
     connexion = get_connection()
@@ -173,13 +177,13 @@ def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, initia
                     requete = """
                     UPDATE public.spools SET
                         nfc_id = %s, id_materials = %s, id_marques = %s, color_name = %s,
-                        initial_weight = %s, empty_spool_weight = %s, diametre = %s,
+                        id_bobine_vide =%s, empty_spool_weight = %s, diametre = %s,
                         temperature_imp = %s, temperature_table = %s, debit = %s,
                         pressure_advance = %s, vit_volum_max = %s, vit_imp = %s
                     WHERE id_spools = %s;
                     """
                     curs.execute(requete, (
-                        nfc_id, id_materials, id_marques, color_name, initial_weight,
+                        nfc_id, id_materials, id_marques, color_name, id_bobine_vide,
                         empty_spool_weight, diametre, temperature_imp, temperature_table,
                         debit, pressure_advance, vit_volum_max, vit_imp, id_spools
                     ))
@@ -206,13 +210,15 @@ def get_spool_by_nfc(nfc_uid: str):
                 s.*,
                 m.nom_marques,
                 mat.type_materials,
-                ((s.initial_weight - empty_spool_weigt) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
+                bv.poids_bobine,
+                ((s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.weight_used), 0)) AS poids_filament_restant
             FROM public.spools s
             JOIN public.marques m ON s.id_marques = m.id_marques 
             JOIN public.materials mat ON s.id_materials = mat.id_materials
             LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
+            LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
             WHERE s.nfc_id ILIKE %s
-            GROUP BY s.id_spools, m.id_marques, m.nom_marques, mat.id_materials, mat.type_materials
+            GROUP BY s.id_spools, m.id_marques, m.nom_marques, mat.id_materials, mat.type_materials, bv.poids_bobine
             LIMIT 1;
             """
             curs.execute(requete, (nfc_uid.strip(),))
@@ -274,6 +280,27 @@ def get_stats_by_material():
                 GROUP BY mat.type_materials
                 ORDER BY poids_total DESC;
                 """)
+                return curs.fetchall()
+        finally:
+            connexion.close()
+    return []
+
+def get_all_bobine_vide():
+    connexion = get_connection()
+    if connexion:
+        try:
+            with connexion.cursor(cursor_factory=RealDictCursor) as curs:
+                curs.execute("""
+                            SELECT 
+                                type_bobine,
+                                poids_bobine,
+                                mar.id_marques,
+                                mar.nom_marques,
+                                bv.id_bobine_vide
+                                FROM public.bobine_vide bv
+                                JOIN public.marques mar on bv.id_marques = mar.id_marques
+                                ORDER BY mar.nom_marques;
+                                """)
                 return curs.fetchall()
         finally:
             connexion.close()
