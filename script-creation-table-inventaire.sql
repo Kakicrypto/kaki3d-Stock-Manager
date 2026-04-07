@@ -29,10 +29,12 @@ CREATE TABLE public.spools (
 
 CREATE TABLE public.usage_logs (
     id_usage_logs INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    weight_used numeric(5,1) DEFAULT 0.0 NOT NULL,
+    poids_pese numeric(5,1) DEFAULT 0.0 NOT NULL,
     print_date DATE,
     id_spools INTEGER NOT NULL REFERENCES public.spools(id_spools),
-    project_name VARCHAR(255)
+    project_name VARCHAR(255),
+    poids_consomme numeric(5,1) DEFAULT 0.0 NOT NULL
+    
 );
 
 COMMENT ON TABLE public.usage_logs IS 'historique de consomation';

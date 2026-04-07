@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_all_bobine_vide
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_all_bobine_vide, get_derniere_pesee
 import time 
 import datetime
 import base64
@@ -89,13 +89,15 @@ if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
     data = get_inventory()
     data_global = get_aggregated_inventory()
+
     if data:
         toutes_les_couleurs = [element["color_name"] for element in data]
         couleur_unique = list(set(toutes_les_couleurs))
         choix_couleur = ["toutes"] + couleur_unique
-        df = pd.DataFrame(data)
+        df = pd.DataFrame(data_global)
     else:
         choix_couleur = ["toutes"]
+
     with st.sidebar : 
         filtre_couleur = st.selectbox ("Choix des couleurs", choix_couleur)
     if data_global:
@@ -302,16 +304,22 @@ elif menu == ":material/monitor_weight: Consommation":
             choix = st.selectbox(
                 label="Sélectionner la bobine utilisée", options=data,
                 format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
+            dernier_poids = get_derniere_pesee(
+                                                choix['id_spools'], 
+                                                choix["initial_weight"], 
+                                                choix["poids_bobine"]
+                                                )
         with c1:
             with st.form("Ajout"):
                 nom_projet = st.text_input("Nom du projet imprimé")
-                consommation = st.number_input("Poids consommé (g)", value=100.0, step=1.0, max_value=float(choix['poids_filament_restant']))
+                consommation = st.number_input("Poids pesé (g)", value=100.0, step=1.0, max_value=float(choix['poids_filament_restant']))
                 date_print = st.date_input("Date de l'impression", value=datetime.date.today())
                 submit = st.form_submit_button("Enregistrer la consommation")
+                
             if submit:
                 succes = usage_log(
-                    weight_used=consommation, date_print=date_print,
-                    id_spools=choix['id_spools'], project_name=nom_projet
+                    poids_pese=consommation, date_print=date_print,
+                    id_spools=choix['id_spools'], project_name=nom_projet, poids_consomme = float(dernier_poids[0]) - consommation
                 )
                 if succes:
                     st.session_state.conso_success = True
@@ -409,7 +417,7 @@ elif menu == ":material/nfc: Scanner NFC":
 
             if submit_conso:
                 succes = usage_log(
-                    weight_used=consommation, date_print=date_print,
+                    poids_consomme=consommation, date_print=date_print,
                     id_spools=spool['id_spools'], project_name=nom_projet
                 )
                 if succes:
