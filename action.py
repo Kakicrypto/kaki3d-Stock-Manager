@@ -20,8 +20,8 @@ TABLES_AUTORISEES = {
 
 
 def add_spool(nfc_id, color_name, initial_weight, id_bobine_vide, diametre,
-              temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
-              id_marques, id_materials):
+            temp_imp, temp_table, debit, pressure_adv, vit_max, vit_imp,
+            id_marques, id_materials):
     """Insère une nouvelle bobine de filament dans la table `spools`.
 
     Args:
@@ -277,8 +277,8 @@ def get_or_create_id(table, column, value):
 
 
 def update_spool(id_spools, nfc_id, id_materials, id_marques, color_name, id_bobine_vide,
-                 empty_spool_weight, diametre, temperature_imp, temperature_table,
-                 debit, pressure_advance, vit_volum_max, vit_imp=0):
+                empty_spool_weight, diametre, temperature_imp, temperature_table,
+                debit, pressure_advance, vit_volum_max, vit_imp=0):
     """Met à jour les paramètres d'une bobine existante dans la table `spools`.
 
     Tous les champs sont mis à jour en une seule requête UPDATE.

@@ -259,26 +259,26 @@ elif menu == ":material/tune: Modifier une bobine":
             st.divider()
             st.subheader("Paramètres techniques (Slicer)")
             c1, c2, c3 = st.columns(3)
-        with c1:
-            nouvelle_temp = st.number_input("Temperature buse (°C)", value=float(choix['temperature_imp']))
-            nouvelle_temp_tab = st.number_input("Temperature plateau (°C)", value=float(choix['temperature_table']))
-        with c2:
-            nouv_vit_imp = st.number_input("Vitesse impression (mm/s)", value=float(choix['vit_imp']))
-            nouveau_debit = st.number_input("Débit (%)", value=float(choix['debit']))
-        with c3:
-            nouvelle_PA = st.number_input("Pressure advance ", value=float(choix['pressure_advance']))
-            nouvelle_Vmax = st.number_input("Vitesse volumetrique (mm³/s)", value=float(choix['vit_volum_max']))
-        with c1:
-            submit = st.form_submit_button("Enregistrer les modifications")
+            with c1:
+                nouvelle_temp = st.number_input("Temperature buse (°C)", value=float(choix['temperature_imp']))
+                nouvelle_temp_tab = st.number_input("Temperature plateau (°C)", value=float(choix['temperature_table']))
+            with c2:
+                nouv_vit_imp = st.number_input("Vitesse impression (mm/s)", value=float(choix['vit_imp']))
+                nouveau_debit = st.number_input("Débit (%)", value=float(choix['debit']))
+            with c3:
+                nouvelle_PA = st.number_input("Pressure advance ", value=float(choix['pressure_advance']))
+                nouvelle_Vmax = st.number_input("Vitesse volumetrique (mm³/s)", value=float(choix['vit_volum_max']))
+            with c1:
+                submit = st.form_submit_button("Enregistrer les modifications")
         if submit:
             id_m = get_or_create_id("marques", "nom_marques", nouvelle_marque)
             id_mat = get_or_create_id("materials", "type_materials", nouveau_material)
-            id_bobine_vide = st.session_state.get("id_bobine_vide")
-            empty_spool_weight = st.session_state.get("empty_spool_weight")
+            id_bobine_vide = st.session_state.get("id_bobine_vide") or choix["id_bobine_vide"]
+            empty_spool_weight = st.session_state.get("empty_spool_weight") or choix["poids_bobine"]
             succes = update_spool(
                 id_spools=choix['id_spools'], nfc_id=nouveau_nfc_id,
                 id_materials=id_mat, id_marques=id_m, color_name=nouvelle_couleur,
-                initial_weight=choix['initial_weight'], empty_spool_weight=empty_spool_weight, id_bobine_vide=id_bobine_vide,
+                empty_spool_weight=empty_spool_weight, id_bobine_vide=id_bobine_vide,
                 diametre=choix['diametre'], temperature_imp=nouvelle_temp,
                 temperature_table=nouvelle_temp_tab, vit_imp=nouv_vit_imp,
                 debit=nouveau_debit, pressure_advance=nouvelle_PA, vit_volum_max=nouvelle_Vmax
