@@ -505,18 +505,17 @@ def get_all_bobine_vide():
     return []
 
 
-def get_derniere_pesee(id_spools, initial_weight, poids_bobine_vide):
+def get_derniere_pesee(id_spools, initial_weight):
     """Récupère le dernier poids pesé enregistré pour une bobine donnée.
 
     Permet de pré-remplir le champ "poids pesé" dans le formulaire de
     consommation avec la valeur la plus récente. Si aucune pesée n'existe
     encore (bobine neuve), retourne le poids de filament initial
-    (poids total − poids du support vide) comme valeur de référence.
+    (poids total) comme valeur de référence.
 
     Args:
         id_spools (int): Identifiant de la bobine concernée.
         initial_weight (float): Poids total de la bobine pleine en grammes.
-        poids_bobine_vide (float): Poids du support vide en grammes (tare).
 
     Returns:
         tuple | bool: Tuple à un élément contenant `derniere_pesee` (float)
@@ -530,10 +529,10 @@ def get_derniere_pesee(id_spools, initial_weight, poids_bobine_vide):
                 requete = ("""
                         SELECT COALESCE(
                         (SELECT poids_pese FROM usage_logs WHERE id_spools = %s ORDER BY print_date DESC LIMIT 1),
-                        (%s - %s)
+                        (%s)
                         ) AS derniere_pesee
                         """)
-                curs.execute(requete, (id_spools, initial_weight, poids_bobine_vide))
+                curs.execute(requete, (id_spools, initial_weight))
                 return curs.fetchone()
         except Exception as e:
             print(f"Erreur Ajout consommation : {e}")
