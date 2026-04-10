@@ -66,6 +66,7 @@
 - [ ] Correction script SQL pour nouveaux utilisateurs (syntaxe `numeric` + table `bobine_vide`).
 - [ ] Améliorer la navigation NFC (éviter le passage par l'inventaire au retour).
 - [ ] Mettre à jour README avec infos connexion Transaction Pooler.
+- [X] Masquer les bobines vides de l'inventaire < 5g restant
 
 ---
 
