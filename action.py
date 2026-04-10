@@ -106,7 +106,9 @@ def get_aggregated_inventory():
                 LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
                 LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
                 GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine
-                ORDER BY m.nom_marques;
+                HAVING (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.poids_consomme), 0)) > 5
+                ORDER BY m.nom_marques
+                
                 """
                 curs.execute(requete)
                 inventory = curs.fetchall()

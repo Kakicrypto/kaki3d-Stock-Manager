@@ -97,7 +97,6 @@ if menu == ":material/inventory_2: État du stock":
         df = pd.DataFrame(data_global)
     else:
         choix_couleur = ["toutes"]
-
     with st.sidebar : 
         filtre_couleur = st.selectbox ("Choix des couleurs", choix_couleur)
     if data_global:
@@ -307,7 +306,6 @@ elif menu == ":material/monitor_weight: Consommation":
             dernier_poids = get_derniere_pesee(
                                                 choix['id_spools'], 
                                                 choix["initial_weight"], 
-                                                choix["poids_bobine"]
                                                 )
         with c1:
             with st.form("Ajout"):
