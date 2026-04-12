@@ -402,20 +402,23 @@ elif menu == ":material/nfc: Scanner NFC":
 
             st.divider()
             st.subheader("Étape 2 – Enregistrer une consommation")
-
+            dernier_poids = get_derniere_pesee(
+                                                spool['id_spools'], 
+                                                spool["initial_weight"], 
+                                                )
             with st.form("form_nfc_conso"):
                 nom_projet = st.text_input("Nom du projet imprimé")
                 consommation = st.number_input(
-                    "Poids consommé (g)", value=10.0, step=1.0,
-                    min_value=0.1, max_value=float(spool['poids_filament_restant'])
+                    "Poids pesé (g)", value=10.0, step=1.0,
+                    min_value=0.1, max_value=float(spool['poids_filament_restant']+spool["poids_bobine"])
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")
 
             if submit_conso:
                 succes = usage_log(
-                    poids_consomme=consommation, date_print=date_print,
-                    id_spools=spool['id_spools'], project_name=nom_projet
+                    poids_pese=consommation, date_print=date_print,
+                    id_spools=spool['id_spools'], project_name=nom_projet, poids_consomme = float(dernier_poids[0]) - consommation
                 )
                 if succes:
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
