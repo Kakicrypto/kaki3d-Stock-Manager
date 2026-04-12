@@ -89,7 +89,6 @@ if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
     data = get_inventory()
     data_global = get_aggregated_inventory()
-
     if data:
         toutes_les_couleurs = [element["color_name"] for element in data]
         couleur_unique = list(set(toutes_les_couleurs))
@@ -310,7 +309,7 @@ elif menu == ":material/monitor_weight: Consommation":
         with c1:
             with st.form("Ajout"):
                 nom_projet = st.text_input("Nom du projet imprimé")
-                consommation = st.number_input("Poids pesé (g)", value=100.0, step=1.0, max_value=float(choix['poids_filament_restant']))
+                consommation = st.number_input("Poids pesé (g)", value=100.0, step=1.0, max_value=float(choix['poids_filament_restant']+choix['poids_bobine']))
                 date_print = st.date_input("Date de l'impression", value=datetime.date.today())
                 submit = st.form_submit_button("Enregistrer la consommation")
                 
