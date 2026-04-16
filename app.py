@@ -5,7 +5,7 @@ from action import get_inventory, add_spool, get_or_create_id, update_spool, usa
 import time 
 import datetime
 import base64
-from config_custom import pseudo
+from config_custom import pseudo, app_url
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -343,7 +343,6 @@ elif menu == ":material/nfc: Scanner NFC":
         st.rerun()
 
     # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
-    app_url = "https://kaki3d-stock-manager.streamlit.app"
     
     if not st.session_state.nfc_uid:
         st.subheader("Étape 1 – Scanner le tag")
