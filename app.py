@@ -338,12 +338,13 @@ elif menu == ":material/nfc: Scanner NFC":
     # Récupère l'UID si on revient de la page NFC statique
     params = st.query_params
     if "nfc_uid" in params:
-        st.session_state.nfc_uid = params["nfc_uid"].upper()
-        st.query_params.clear()
-        st.rerun()
+        if st.session_state.nfc_uid is None:
+            st.session_state.nfc_uid = params["nfc_uid"].upper()
+            st.query_params.clear()
+            st.rerun()
 
     # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
-    
+
     if not st.session_state.nfc_uid:
         st.subheader("Étape 1 – Scanner le tag")
         st.markdown("> ⚠️ **Android + Chrome uniquement**")
