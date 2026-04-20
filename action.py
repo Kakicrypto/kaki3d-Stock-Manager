@@ -11,6 +11,7 @@ dans un bloc `finally`, garantissant l'absence de fuite de connexion.
 import psycopg2
 from database import get_connection
 from psycopg2.extras import RealDictCursor
+import streamlit as st
 
 # Whitelist de sécurité pour get_or_create_id
 TABLES_AUTORISEES = {
@@ -93,23 +94,31 @@ def get_aggregated_inventory():
         try:
             with connexion.cursor(cursor_factory=RealDictCursor) as curs:
                 requete = """
+                WITH conso AS (
+                    SELECT id_spools, SUM(poids_consomme) as total_consomme
+                    FROM usage_logs
+                    GROUP BY id_spools
+                )
                 SELECT 
+                    c.total_consomme ,
                     m.nom_marques, 
                     mat.type_materials,
                     s.color_name,
                     bv.poids_bobine,
                     (SUM(s.initial_weight - bv.poids_bobine)) as poids_filament_initial,
-                    (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.poids_consomme), 0)) AS poids_filament_restant
-                FROM public.spools s
+                    (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(c.total_consomme, 0)) AS poids_filament_restant
+                FROM spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
-                LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
                 LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
-                GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine
-                HAVING (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.poids_consomme), 0)) > 5
+                LEFT JOIN conso c ON s.id_spools = c.id_spools
+                GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine,c.total_consomme
+                HAVING (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(c.total_consomme, 0)) > 5
                 ORDER BY m.nom_marques
                 
                 """
+
+
                 curs.execute(requete)
                 inventory = curs.fetchall()
         except Exception as e:

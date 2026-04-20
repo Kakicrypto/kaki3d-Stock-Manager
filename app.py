@@ -5,7 +5,7 @@ from action import get_inventory, add_spool, get_or_create_id, update_spool, usa
 import time 
 import datetime
 import base64
-from config_custom import pseudo
+from config_custom import pseudo, app_url
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -108,10 +108,11 @@ if menu == ":material/inventory_2: État du stock":
                     total_r = float(b['poids_filament_restant'])
                     ratio = max(0.0, min(1.0, total_r / total_i)) if total_i > 0 else 0
                     st.metric(f"{b['nom_marques']} - {b['color_name']}", f"{int(total_r)}g")
-                    fig = px.pie(values=[b["poids_filament_restant"], b["poids_filament_initial"]-b["poids_filament_restant"]], names=["restant", "consommé"], hole=0.5, color_discrete_sequence=["#00FFC8","#161B22"])
-                    fig.update_traces(hovertemplate= "%{value}g")
-                    fig.update_layout(height=300, showlegend=False)
-                    st.plotly_chart(fig)
+                    st.markdown(f"""
+                    <div style="background-color:#24835a; border-radius:8px; height:10px; width:100%;">
+                        <div style="background-color:#00FFC8; border-radius:8px; height:10px; width:{ratio*100:.1f}%;"></div>
+                    </div>
+                    """, unsafe_allow_html=True)
                     #st.progress(ratio)
                     st.caption(f"Type: {b['type_materials']}")
                     col_index += 1
@@ -337,13 +338,13 @@ elif menu == ":material/nfc: Scanner NFC":
     # Récupère l'UID si on revient de la page NFC statique
     params = st.query_params
     if "nfc_uid" in params:
-        st.session_state.nfc_uid = params["nfc_uid"].upper()
-        st.query_params.clear()
-        st.rerun()
+        if st.session_state.nfc_uid is None:
+            st.session_state.nfc_uid = params["nfc_uid"].upper()
+            st.query_params.clear()
+            st.rerun()
 
     # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
-    app_url = "https://kaki3d-stock-manager.streamlit.app"
-    
+
     if not st.session_state.nfc_uid:
         st.subheader("Étape 1 – Scanner le tag")
         st.markdown("> ⚠️ **Android + Chrome uniquement**")
@@ -414,12 +415,13 @@ elif menu == ":material/nfc: Scanner NFC":
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")
-
+            st.write(f"DEBUG - poids_pese: {consommation}, poids_consomme: {float(dernier_poids[0]) - consommation}, id_spools: {spool['id_spools']}")
             if submit_conso:
                 succes = usage_log(
                     poids_pese=consommation, date_print=date_print,
                     id_spools=spool['id_spools'], project_name=nom_projet, poids_consomme = float(dernier_poids[0]) - consommation
                 )
+                st.write(f"succes: {succes}")
                 if succes:
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
                     time.sleep(1.5)
