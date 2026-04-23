@@ -1,13 +1,47 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_all_bobine_vide, get_derniere_pesee
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_derniere_pesee, get_all_bobine_vide_commune
 import time 
 import datetime
 import base64
 from config_custom import pseudo, app_url
 import plotly.express as px
 import plotly.graph_objects as go
+
+
+#mise en cache des focntions 
+@st.cache_data
+def cached_get_inventory():
+    return get_inventory()
+
+@st.cache_data
+def cached_get_aggregated_inventory():
+    return get_aggregated_inventory()
+
+@st.cache_data
+def cached_get_all_materials():
+    return get_all_materials()
+
+@st.cache_data
+def cached_get_all_bobine_vide_commune():
+    return get_all_bobine_vide_commune()
+
+@st.cache_data
+def cached_get_stats_by_material():
+    return get_stats_by_material()
+
+@st.cache_data
+def cached_get_stats_by_project():
+    return get_stats_by_project()
+
+@st.cache_data
+def cached_get_stats_by_month():
+    return get_stats_by_month()
+
+@st.cache_data
+def cached_get_spool_by_nfc(uid):
+    return get_spool_by_nfc(uid)
 
 # Configuration de la page
 st.set_page_config(page_title="Mon Stock de Filament - Kaki3D", layout="wide")
@@ -87,8 +121,8 @@ menu = st.sidebar.radio("", pages, index=default)
 # --- 1. ÉTAT DU STOCK ---
 if menu == ":material/inventory_2: État du stock":
     st.title(":material/inventory_2: État de l'inventaire")
-    data = get_inventory()
-    data_global = get_aggregated_inventory()
+    data = cached_get_inventory()
+    data_global = cached_get_aggregated_inventory()
     if data:
         toutes_les_couleurs = [element["color_name"] for element in data]
         couleur_unique = list(set(toutes_les_couleurs))
@@ -125,8 +159,8 @@ if menu == ":material/inventory_2: État du stock":
 # --- 2. AJOUT D'UNE BOBINE ---
 elif menu == ":material/add_circle: Ajouter une bobine":
     st.title(":material/add_circle: Enregistrer un nouveau filament")
-    liste_bobine_vide = get_all_bobine_vide()
-    liste_matieres_brute = get_all_materials() 
+    liste_bobine_vide = cached_get_all_bobine_vide_commune()
+    liste_matieres_brute = cached_get_all_materials() 
     dict_matieres = {m['type_materials']: m['id_materials'] for m in liste_matieres_brute}
     noms_matieres = list(dict_matieres.keys())
     c1,c2,c3 = st.columns(3)
@@ -141,7 +175,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         elif choix_matiere:
             st.session_state.id_mat = dict_matieres[choix_matiere]
     with c2:
-        filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
+        filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b["marques"]['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
         if filtre_bobine :
             st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
     if "nfc_ajout" not in st.session_state:
@@ -184,6 +218,8 @@ elif menu == ":material/add_circle: Ajouter une bobine":
                 ):
                     st.session_state.nfc_ajout = None
                     st.success(f"✅ Bobine {brand_name} {color} ajoutée !")
+                    cached_get_inventory.clear()
+                    cached_get_aggregated_inventory.clear()
                 else:
                     st.error("Erreur technique lors de l'insertion.")
             else:
@@ -193,9 +229,9 @@ elif menu == ":material/add_circle: Ajouter une bobine":
 elif menu == ":material/analytics: Statistiques & Analyse":
     st.title(":material/analytics: Statistiques")
     c1, c2 = st.columns(2)
-    data_material = get_stats_by_material()
-    data_month = get_stats_by_month()
-    data_project = get_stats_by_project()
+    data_material = cached_get_stats_by_material()
+    data_month = cached_get_stats_by_month()
+    data_project = cached_get_stats_by_project()
     df_month = pd.DataFrame(data_month)
     df_material = pd.DataFrame(data_material)
     df_project = pd.DataFrame(data_project)
@@ -237,8 +273,8 @@ elif menu == ":material/tune: Modifier une bobine":
         st.toast("Modifications enregistrées !", icon="✅")
     st.session_state.update_success = False
     st.title("Modifier une bobine")
-    data = get_inventory()
-    liste_bobine_vide = get_all_bobine_vide()
+    data = cached_get_inventory()
+    liste_bobine_vide = cached_get_all_bobine_vide_commune()
     c1, c2, _ = st.columns(3)
     if data:
         with c1:
@@ -246,7 +282,7 @@ elif menu == ":material/tune: Modifier une bobine":
                 label="Sélectionner la bobine à modifier", options=data,
                 format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
         with c2:
-            filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
+            filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b["marques"]['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
             if filtre_bobine :
                 st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
                 st.session_state.empty_spool_weight = filtre_bobine["poids_bobine"]
@@ -284,6 +320,7 @@ elif menu == ":material/tune: Modifier une bobine":
             )
             if succes:
                 st.session_state.update_success = True
+                cached_get_inventory.clear()
                 st.rerun()
             else:
                 st.error("Erreur lors de la mise à jour en base.")
@@ -296,7 +333,7 @@ elif menu == ":material/monitor_weight: Consommation":
         st.toast("Consommation enregistrées !", icon="✅")
     st.session_state.conso_success = False
     st.title(":material/monitor_weight: Consommation filament")
-    data = get_inventory()
+    data = cached_get_inventory()
     c1, c2, c3 = st.columns(3)
     if data:
         with c1:
@@ -321,6 +358,9 @@ elif menu == ":material/monitor_weight: Consommation":
                 )
                 if succes:
                     st.session_state.conso_success = True
+                    cached_get_inventory.clear()
+                    cached_get_aggregated_inventory.clear()
+                    time.sleep(0.2)
                     st.rerun()
                 else:
                     st.error("Erreur lors de la mise à jour en base.")
@@ -366,7 +406,7 @@ elif menu == ":material/nfc: Scanner NFC":
         uid = st.session_state.nfc_uid
         st.info(f"🔎 Recherche de la bobine avec l'UID : `{uid}`")
 
-        spool = get_spool_by_nfc(uid)
+        spool = cached_get_spool_by_nfc(uid)
 
         if spool is None:
             st.error(f"❌ Aucune bobine trouvée pour l'UID **{uid}**.")
@@ -426,6 +466,8 @@ elif menu == ":material/nfc: Scanner NFC":
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
                     time.sleep(1.5)
                     st.session_state.nfc_uid = None
+                    cached_get_inventory.clear() 
+                    cached_get_aggregated_inventory.clear()
                     st.rerun()
                 else:
                     st.error("Erreur lors de l'enregistrement en base.")
