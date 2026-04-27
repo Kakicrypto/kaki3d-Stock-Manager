@@ -42,8 +42,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-st.write(f"QUERY PARAMS: {st.query_params}")
-st.write(f"SESSION: {st.session_state}")
 # Initialisation session
 if "nfc_uid" not in st.session_state:
     st.session_state.nfc_uid = None
@@ -333,7 +331,6 @@ elif menu == ":material/monitor_weight: Consommation":
 elif menu == ":material/nfc: Scanner NFC":
     st.title(":material/nfc: Scanner une bobine NFC")
     st.session_state.current_page = 5
-    st.write(f"SESSION nfc_uid: {st.session_state.get('nfc_uid')}")
     # Initialise la session
     if "nfc_uid" not in st.session_state:
         st.session_state.nfc_uid = None
@@ -418,14 +415,12 @@ elif menu == ":material/nfc: Scanner NFC":
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")
-            st.write(f"DEBUG - poids_pese: {consommation}, poids_consomme: {float(dernier_poids[0]) - consommation}, id_spools: {spool['id_spools']}")
-            st.write(f"submit_conso: {submit_conso}")
             if submit_conso:
                 succes = usage_log(
                     poids_pese=consommation, date_print=date_print,
                     id_spools=spool['id_spools'], project_name=nom_projet, poids_consomme = float(dernier_poids[0]) - consommation
                 )
-                st.write(f"succes: {succes}")
+                
                 if succes:
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
                     time.sleep(1.5)
