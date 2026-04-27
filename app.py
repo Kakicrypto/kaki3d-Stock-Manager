@@ -75,7 +75,7 @@ pages = [
 ]
 
 # Index par défaut selon la redirection
-default = 0
+default = st.session_state.get("current_page", 0)
 if st.query_params.get("page") == "ajout":
     default = 1
     st.query_params.clear()
@@ -332,6 +332,7 @@ elif menu == ":material/monitor_weight: Consommation":
 # --- 6. SCANNER NFC ---
 elif menu == ":material/nfc: Scanner NFC":
     st.title(":material/nfc: Scanner une bobine NFC")
+    st.session_state.current_page = 5
     st.write(f"SESSION nfc_uid: {st.session_state.get('nfc_uid')}")
     # Initialise la session
     if "nfc_uid" not in st.session_state:
@@ -340,10 +341,10 @@ elif menu == ":material/nfc: Scanner NFC":
     # Récupère l'UID si on revient de la page NFC statique
     params = st.query_params
     if "nfc_uid" in params:
-        if st.session_state.nfc_uid is None:
-            st.session_state.nfc_uid = params["nfc_uid"].upper()
-            st.query_params.clear()
-            st.rerun()
+        st.session_state.nfc_uid = params["nfc_uid"].upper()
+        st.session_state.current_page = 5
+        st.query_params.clear()
+        st.rerun()
 
     # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
 
