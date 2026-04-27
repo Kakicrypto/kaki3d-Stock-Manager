@@ -274,14 +274,17 @@ elif menu == ":material/tune: Modifier une bobine":
     st.title("Modifier une bobine")
     data = cached_get_inventory()
     liste_bobine_vide = cached_get_all_bobine_vide_commune()
+
     c1, c2, _ = st.columns(3)
     if data:
         with c1:
             choix = st.selectbox(
                 label="Sélectionner la bobine à modifier", options=data,
                 format_func=lambda b: f"{b['nom_marques']} - {b['color_name']} ({b['poids_filament_restant']}g)")
+
         with c2:
-            filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['marques']['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
+            index_bobine = next((i for i, b in enumerate(liste_bobine_vide) if b['id_bobine_vide'] == choix['id_bobine_vide']), 0)
+            filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['marques']['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)",index=index_bobine)
             if filtre_bobine :
                 st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
                 st.session_state.empty_spool_weight = filtre_bobine["poids_bobine"]
