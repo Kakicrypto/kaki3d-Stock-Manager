@@ -9,6 +9,8 @@ from config_custom import pseudo, app_url
 import plotly.express as px
 import plotly.graph_objects as go
 
+st.write(f"QUERY PARAMS: {st.query_params}")
+st.write(f"SESSION: {st.session_state}")
 # Configuration de la page
 st.set_page_config(page_title="Mon Stock de Filament - Kaki3D", layout="wide")
 
