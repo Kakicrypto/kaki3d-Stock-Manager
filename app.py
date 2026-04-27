@@ -75,7 +75,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 # Initialisation session
 if "nfc_uid" not in st.session_state:
     st.session_state.nfc_uid = None
@@ -107,7 +106,7 @@ pages = [
 ]
 
 # Index par défaut selon la redirection
-default = 0
+default = st.session_state.get("current_page", 0)
 if st.query_params.get("page") == "ajout":
     default = 1
     st.query_params.clear()
@@ -370,7 +369,7 @@ elif menu == ":material/monitor_weight: Consommation":
 # --- 6. SCANNER NFC ---
 elif menu == ":material/nfc: Scanner NFC":
     st.title(":material/nfc: Scanner une bobine NFC")
-
+    st.session_state.current_page = 5
     # Initialise la session
     if "nfc_uid" not in st.session_state:
         st.session_state.nfc_uid = None
@@ -378,10 +377,10 @@ elif menu == ":material/nfc: Scanner NFC":
     # Récupère l'UID si on revient de la page NFC statique
     params = st.query_params
     if "nfc_uid" in params:
-        if st.session_state.nfc_uid is None:
-            st.session_state.nfc_uid = params["nfc_uid"].upper()
-            st.query_params.clear()
-            st.rerun()
+        st.session_state.nfc_uid = params["nfc_uid"].upper()
+        st.session_state.current_page = 5
+        st.query_params.clear()
+        st.rerun()
 
     # Bouton qui ouvre la page NFC statique (hors iframe = NFC fonctionne ✅)
 
@@ -455,13 +454,12 @@ elif menu == ":material/nfc: Scanner NFC":
                 )
                 date_print = st.date_input("Date d'impression", value=datetime.date.today())
                 submit_conso = st.form_submit_button("💾 Enregistrer la consommation")
-            st.write(f"DEBUG - poids_pese: {consommation}, poids_consomme: {float(dernier_poids[0]) - consommation}, id_spools: {spool['id_spools']}")
             if submit_conso:
                 succes = usage_log(
                     poids_pese=consommation, date_print=date_print,
                     id_spools=spool['id_spools'], project_name=nom_projet, poids_consomme = float(dernier_poids[0]) - consommation
                 )
-                st.write(f"succes: {succes}")
+                
                 if succes:
                     st.success(f"✅ {consommation}g enregistrés pour « {nom_projet} » !")
                     time.sleep(1.5)
