@@ -11,6 +11,8 @@ dans un bloc `finally`, garantissant l'absence de fuite de connexion.
 import psycopg2
 from database import get_connection
 from psycopg2.extras import RealDictCursor
+import streamlit as st
+import requests
 
 # Whitelist de sécurité pour get_or_create_id
 TABLES_AUTORISEES = {
@@ -93,23 +95,31 @@ def get_aggregated_inventory():
         try:
             with connexion.cursor(cursor_factory=RealDictCursor) as curs:
                 requete = """
+                WITH conso AS (
+                    SELECT id_spools, SUM(poids_consomme) as total_consomme
+                    FROM usage_logs
+                    GROUP BY id_spools
+                )
                 SELECT 
+                    c.total_consomme ,
                     m.nom_marques, 
                     mat.type_materials,
                     s.color_name,
                     bv.poids_bobine,
                     (SUM(s.initial_weight - bv.poids_bobine)) as poids_filament_initial,
-                    (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.poids_consomme), 0)) AS poids_filament_restant
-                FROM public.spools s
+                    (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(c.total_consomme, 0)) AS poids_filament_restant
+                FROM spools s
                 JOIN public.marques m ON s.id_marques = m.id_marques
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
-                LEFT JOIN public.usage_logs u ON s.id_spools = u.id_spools
                 LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
-                GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine
-                HAVING (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(SUM(u.poids_consomme), 0)) > 5
+                LEFT JOIN conso c ON s.id_spools = c.id_spools
+                GROUP BY m.nom_marques, mat.type_materials, s.color_name,bv.poids_bobine,c.total_consomme
+                HAVING (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(c.total_consomme, 0)) > 5
                 ORDER BY m.nom_marques
                 
                 """
+
+
                 curs.execute(requete)
                 inventory = curs.fetchall()
         except Exception as e:
@@ -472,41 +482,6 @@ def get_stats_by_material():
             connexion.close()
     return []
 
-
-def get_all_bobine_vide():
-    """Récupère tous les modèles de support de bobine vide enregistrés.
-
-    Utilisée pour alimenter les selectbox lors de l'ajout ou de la
-    modification d'une bobine, afin d'associer le bon poids de tare.
-
-    Returns:
-        list[RealDictRow]: Liste de dictionnaires avec les clés
-            `type_bobine`, `poids_bobine`, `id_marques`, `nom_marques`
-            et `id_bobine_vide`.
-            Triée par nom de marque alphabétique.
-            Retourne une liste vide si la connexion échoue.
-    """
-    connexion = get_connection()
-    if connexion:
-        try:
-            with connexion.cursor(cursor_factory=RealDictCursor) as curs:
-                curs.execute("""
-                            SELECT 
-                                type_bobine,
-                                poids_bobine,
-                                mar.id_marques,
-                                mar.nom_marques,
-                                bv.id_bobine_vide
-                                FROM public.bobine_vide bv
-                                JOIN public.marques mar on bv.id_marques = mar.id_marques
-                                ORDER BY mar.nom_marques;
-                                """)
-                return curs.fetchall()
-        finally:
-            connexion.close()
-    return []
-
-
 def get_derniere_pesee(id_spools, initial_weight):
     """Récupère le dernier poids pesé enregistré pour une bobine donnée.
 
@@ -542,3 +517,39 @@ def get_derniere_pesee(id_spools, initial_weight):
         finally:
             connexion.close()
     return False
+
+
+
+def get_all_bobine_vide_commune():
+    """Récupère tous les modèles de support de bobine vide enregistrés via l'api  .
+        les données viennent de Supabase pour que la base de données de bobine vide
+        soit accessible et commune à tous les utilisateurs.
+
+    Utilisée pour alimenter les selectbox lors de l'ajout ou de la
+    modification d'une bobine, afin d'associer le bon poids de tare.
+
+    Returns:
+        list[dict]: Liste de dictionnaires avec les clés
+            `type_bobine`, `poids_bobine`, `id_marques`, `nom_marques`
+            et `id_bobine_vide`.
+            Triée par nom de marque alphabétique.
+            Retourne une liste vide si la connexion échoue.
+    """
+    try:
+        url = st.secrets["api"]["url"]+"bobine_vide?select=id_bobine_vide,poids_bobine,type_bobine,id_marques,photo_url,marques(id_marques,nom_marques)"
+        anon_key = st.secrets["api"]["anon"]
+        
+        response = requests.get(
+            url,
+            headers={
+                "apikey": anon_key,
+                "Authorization": "Bearer " + anon_key
+            }
+        )
+        print(f"URL: {url}")
+        print(f"Status code: {response.status_code}")
+        print(f"Response: {response.text}")
+        return response.json()
+    except Exception as e:
+            print(f"Erreur lors de la connexion : {e}")
+            return []
