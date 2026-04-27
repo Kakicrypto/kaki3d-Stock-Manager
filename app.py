@@ -330,7 +330,7 @@ elif menu == ":material/monitor_weight: Consommation":
 # --- 6. SCANNER NFC ---
 elif menu == ":material/nfc: Scanner NFC":
     st.title(":material/nfc: Scanner une bobine NFC")
-
+    st.write(f"SESSION nfc_uid: {st.session_state.get('nfc_uid')}")
     # Initialise la session
     if "nfc_uid" not in st.session_state:
         st.session_state.nfc_uid = None
