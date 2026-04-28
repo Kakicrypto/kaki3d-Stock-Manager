@@ -178,6 +178,12 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         filtre_bobine = st.selectbox ("Choisir le type de bobine", liste_bobine_vide, format_func=lambda b: f"{b['marques']['nom_marques']} - {b['type_bobine']} ({b['poids_bobine']}g)")
         if filtre_bobine :
             st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
+    with c3:
+        if filtre_bobine["photo_url"]:
+            st.image(filtre_bobine["photo_url"], width=200)
+        else:
+            st.info("Pas de photo disponible")
+
     if "nfc_ajout" not in st.session_state:
         st.session_state.nfc_ajout = None
 
@@ -275,7 +281,8 @@ elif menu == ":material/tune: Modifier une bobine":
     st.title("Modifier une bobine")
     data = cached_get_inventory()
     liste_bobine_vide = cached_get_all_bobine_vide_commune()
-    c1, c2, _ = st.columns(3)
+
+    c1, c2, c3 = st.columns(3)
     if data:
         with c1:
             choix = st.selectbox(
@@ -286,6 +293,11 @@ elif menu == ":material/tune: Modifier une bobine":
             if filtre_bobine :
                 st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
                 st.session_state.empty_spool_weight = filtre_bobine["poids_bobine"]
+        with c3: 
+            if filtre_bobine["photo_url"]:
+                st.image(filtre_bobine["photo_url"], width=200)
+            else:
+                st.info("Pas de photo disponible")
         with st.form("edition"):
             nouvelle_couleur = st.text_input("Couleur", value=choix['color_name'])
             nouvelle_marque = st.text_input("Marque", value=choix['nom_marques'])
