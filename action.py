@@ -546,7 +546,6 @@ def get_all_bobine_vide_commune():
                 "Authorization": "Bearer " + anon_key
             }
         )
-        print(f"URL: {url}")
         print(f"Status code: {response.status_code}")
         print(f"Response: {response.text}")
         return response.json()
