@@ -203,6 +203,12 @@ marques   ──┘    │
 - Credentials dans `st.secrets` uniquement, jamais en dur dans le code
 - `secrets.toml` dans `.gitignore`
 - Whitelist `TABLES_AUTORISEES` dans `get_or_create_id()` pour les insertions dynamiques
+- ⚠️ RLS à activer sur toute les tables avec :
+        ✅ RLS activé sur toutes les tables
+        ✅ bobine_vide — SELECT pour tous
+        ✅ marques — SELECT pour tous + ALL pour service_role
+        ✅ spools, usage_logs, materials — ALL pour service_role
+
 
 ---
 
