@@ -15,6 +15,9 @@ obselete/
 *.architect
 schema relationel .jpg
 Script calcul poid restant.sql
+*.docx
+*.code-workspace
 
 #Fichier 3D
 *.3mf
+
