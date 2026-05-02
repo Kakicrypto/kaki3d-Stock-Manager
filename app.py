@@ -179,7 +179,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
         if filtre_bobine :
             st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
     with c3:
-        if filtre_bobine["photo_url"]:
+        if filtre_bobine and filtre_bobine["photo_url"]:
             st.image(filtre_bobine["photo_url"], width=200)
         else:
             st.info("Pas de photo disponible")
