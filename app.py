@@ -295,7 +295,7 @@ elif menu == ":material/tune: Modifier une bobine":
                 st.session_state.id_bobine_vide = filtre_bobine["id_bobine_vide"]
                 st.session_state.empty_spool_weight = filtre_bobine["poids_bobine"]
         with c3: 
-            if filtre_bobine["photo_url"]:
+            if filtre_bobine and filtre_bobine["photo_url"]:
                 st.image(filtre_bobine["photo_url"], width=200)
             else:
                 st.info("Pas de photo disponible")
