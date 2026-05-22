@@ -206,7 +206,7 @@ elif menu == ":material/add_circle: Ajouter une bobine":
             vit_imp = st.number_input("Vit. d'impression(mm/s)", value=60)
             deb = st.number_input("Débit (%)", value=100.0)
         with c3:
-            pa = st.number_input("Pressure Advance", value=0.000, step=0.001, format="%.3f")
+            pa = st.number_input("Pressure Advance (Facteur K)", value=0.0000, step=0.001, format="%.3f")
             vit = st.number_input("Vit. Vol. Max", value=15)
         
         if st.form_submit_button("🚀 Enregistrer en base"):
@@ -244,10 +244,10 @@ elif menu == ":material/analytics: Statistiques & Analyse":
         if not df_material.empty:
             fig = px.bar(df_material,
                     x="type_materials",
-                    y= "poids_total", 
+                    y= "poids_filament_restant", 
                     color="type_materials",
                     title="Stock par matières", 
-                    labels= {"type_materials":"Matière", "poids_total":"Poid en stock"}, 
+                    labels= {"type_materials":"Matière", "poids_filament_restant":"Poid en stock"}, 
                     text_auto=True
                     )
             st.plotly_chart(fig)
@@ -314,7 +314,7 @@ elif menu == ":material/tune: Modifier une bobine":
                 nouv_vit_imp = st.number_input("Vitesse impression (mm/s)", value=float(choix['vit_imp']))
                 nouveau_debit = st.number_input("Débit (%)", value=float(choix['debit']))
             with c3:
-                nouvelle_PA = st.number_input("Pressure advance ", value=float(choix['pressure_advance']))
+                nouvelle_PA = st.number_input("Pressure advance (Facteur K)", value=float(choix['pressure_advance']))
                 nouvelle_Vmax = st.number_input("Vitesse volumetrique (mm³/s)", value=float(choix['vit_volum_max']))
             with c1:
                 submit = st.form_submit_button("Enregistrer les modifications")
@@ -451,7 +451,7 @@ elif menu == ":material/nfc: Scanner NFC":
             with st.expander("⚙️ Paramètres Slicer"):
                 c1, c2, c3 = st.columns(3)
                 with c1: st.metric("Débit", f"{spool['debit']} %")
-                with c2: st.metric("Pressure Advance", spool['pressure_advance'])
+                with c2: st.metric("Pressure Advance (Facteur K)", spool['pressure_advance'])
                 with c3: st.metric("Vit. vol. max", f"{spool['vit_volum_max']} mm³/s")
 
             st.divider()
