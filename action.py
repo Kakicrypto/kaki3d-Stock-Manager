@@ -454,13 +454,13 @@ def get_stats_by_project():
 def get_stats_by_material():
     """Calcule le poids total de filament en stock par type de matière.
 
-    Basé sur le poids initial des bobines (sans déduire les consommations),
-    ce qui représente la quantité achetée par matière.
+    Basé sur le poids restant dans les bobine ,
+    ce qui représente la quantité restantes par matière.
     Utilisée pour le graphique en barres "stock par matières".
 
     Returns:
         list[RealDictRow]: Liste de dictionnaires avec les clés
-            `type_materials` (str) et `poids_total` (float).
+            `type_materials` (str) et `poids_filament_restant` (float).
             Triée par poids décroissant.
             Retourne une liste vide si la connexion échoue.
     """
@@ -469,13 +469,21 @@ def get_stats_by_material():
         try:
             with connexion.cursor(cursor_factory=RealDictCursor) as curs:
                 curs.execute("""
+                WITH conso AS (
+                    SELECT id_spools, SUM(poids_consomme) as total_consomme
+                    FROM usage_logs
+                    GROUP BY id_spools
+                )
                 SELECT 
-                    mat.type_materials,
-                    SUM(s.initial_weight) AS poids_total
+                mat.type_materials,
+                (SUM(s.initial_weight) - SUM(bv.poids_bobine)) as poids_filament_initial,
+                (SUM(s.initial_weight - bv.poids_bobine) - COALESCE(sum(c.total_consomme), 0)) AS poids_filament_restant
                 FROM public.spools s
                 JOIN public.materials mat ON s.id_materials = mat.id_materials
+                LEFT JOIN public.bobine_vide bv on s.id_bobine_vide = bv.id_bobine_vide
+                LEFT JOIN conso c ON s.id_spools = c.id_spools
                 GROUP BY mat.type_materials
-                ORDER BY poids_total DESC;
+                order by poids_filament_restant desc
                 """)
                 return curs.fetchall()
         finally:
@@ -552,3 +560,34 @@ def get_all_bobine_vide_commune():
     except Exception as e:
             print(f"Erreur lors de la connexion : {e}")
             return []
+
+def get_buy_by_material():
+    """Calcule le poids total de filament en stock par type de matière.
+
+    Basé sur le poids initial des bobines (sans déduire les consommations),
+    ce qui représente la quantité achetée par matière.
+    Utilisée pour le graphique en barres "stock par matières".
+
+    Returns:
+        list[RealDictRow]: Liste de dictionnaires avec les clés
+            `type_materials` (str) et `poids_total` (float).
+            Triée par poids décroissant.
+            Retourne une liste vide si la connexion échoue.
+    """
+    connexion = get_connection()
+    if connexion:
+        try:
+            with connexion.cursor(cursor_factory=RealDictCursor) as curs:
+                curs.execute("""
+                SELECT 
+                    mat.type_materials,
+                    SUM(s.initial_weight) AS poids_total
+                FROM public.spools s
+                JOIN public.materials mat ON s.id_materials = mat.id_materials
+                GROUP BY mat.type_materials
+                ORDER BY poids_total DESC;
+                """)
+                return curs.fetchall()
+        finally:
+            connexion.close()
+    return []

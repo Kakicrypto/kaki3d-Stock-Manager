@@ -1,13 +1,12 @@
 # 🎯 Kaki3D — Stock Manager
 
 Gestionnaire d'inventaire de bobines de filament pour imprimante 3D.  
-Développé avec **Python**, **Streamlit**, **PostgreSQL** et intégration **NFC**.
+Développé avec **Python**, **Streamlit**, **PostgreSQL**, intégration **NFC** et balance connectée **ESP32**.
 
 ![Python](https://img.shields.io/badge/Python-3.11-blue)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.54-red)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-green)
-
-🌐 **Application en ligne :** https://kaki3d-stock-manager.streamlit.app
+![Déployé](https://img.shields.io/badge/Déployé-Streamlit%20Cloud-brightgreen)
 
 ---
 
@@ -24,12 +23,13 @@ Développé avec **Python**, **Streamlit**, **PostgreSQL** et intégration **NFC
 
 ## ✨ Fonctionnalités
 
-- 📦 **Inventaire** — visualisation du stock avec poids de filament restant en temps réel (graphiques donut + filtre couleur)
-- ➕ **Ajout de bobines** — enregistrement des paramètres slicer (température, débit, Pressure Advance...) + gestion de la tare du support
+- 📦 **Inventaire** — visualisation du stock avec poids restant en temps réel (cards + tableau)
+- ➕ **Ajout de bobines** — enregistrement des paramètres slicer (température, débit, Pressure Advance...)
 - ✏️ **Modification** — mise à jour des paramètres d'une bobine existante
-- ⚖️ **Consommation** — saisie par pesée à la balance, calcul automatique du poids consommé par différence
+- ⚖️ **Consommation** — suivi des impressions et déduction automatique du poids
 - 📡 **Scanner NFC** — identification d'une bobine par tag NFC (Android + Chrome)
-- 📊 **Statistiques** — graphiques de consommation par mois, projet et matière
+- 📊 **Statistiques** — graphiques de consommation par mois, projet et matière (Plotly)
+- ⚖️ **KakiScale** — balance connectée ESP32 qui pèse et identifie automatiquement les bobines *(en développement)*
 
 ---
 
@@ -39,11 +39,15 @@ Développé avec **Python**, **Streamlit**, **PostgreSQL** et intégration **NFC
 |-------|------|
 | Python 3.11 | Backend |
 | Streamlit 1.54 | Interface web |
-| PostgreSQL (Supabase) | Base de données cloud |
+| PostgreSQL via Supabase | Base de données cloud |
 | psycopg2 | Connecteur Python ↔ PostgreSQL |
-| Plotly Express | Graphiques interactifs |
+| Plotly Express | Graphiques statistiques |
 | Web NFC API | Lecture des tags NFC depuis le navigateur |
-| GitHub Pages | Hébergement page NFC statique |
+| GitHub Pages | Hébergement de la page NFC statique |
+| ESP32 + Arduino/C++ | Firmware balance connectée (KakiScale) |
+| HX711 + cellule de charge 5 kg | Pesée des bobines |
+| PN532 | Lecture NFC depuis la balance |
+| Fusion 360 | Modélisation du boîtier imprimé 3D |
 
 ---
 
@@ -81,12 +85,13 @@ pip install -r requirements.txt
 
 Crée un projet sur [Supabase](https://supabase.com) et exécute le fichier `script-creation-table-inventaire.sql` dans l'éditeur SQL de Supabase.
 
-> ⚠️ **Important** : utilise la méthode de connexion **Transaction Pooler** (pas Session Pooler) pour la compatibilité avec Streamlit Cloud.
+> ⚠️ **Important** : Change la méthode de connexion en **Transaction Pooler** (port 6543) — nécessaire pour Streamlit Cloud qui utilise uniquement IPv4.
 
-Dans les paramètres de connexion Supabase :
-1. Va dans **Project Settings → Database**
-2. Sélectionne **Transaction pooler**
-3. Le port doit être **6543** (et non 5432)
+Récupère tes identifiants de connexion depuis le dashboard Supabase :
+- Host
+- User (`postgres.xxxxx`)
+- Password
+- Port (`6543`)
 
 ### 5. Configure les secrets
 
@@ -96,25 +101,33 @@ Crée le fichier `.streamlit/secrets.toml` (⚠️ ne jamais commiter ce fichier
 [database]
 host     = "aws-0-xx-xxxx-x.pooler.supabase.com"
 dbname   = "postgres"
-user     = "postgres.xxxxxxxx"
+user     = "postgres.xxxxx"
 password = "TON_MOT_DE_PASSE"
 port     = "6543"
+
+[api]
+url  = "https://TON_PROJECT_ID.supabase.co/rest/v1/"
+anon = "TON_ANON_KEY"
 ```
 
-### 6. Personnalise ta configuration
+> La clé `anon` se trouve dans le dashboard Supabase sous **Project Settings → API → Project API keys**. Elle permet d'accéder en lecture publique à la table `bobine_vide` partagée entre tous les utilisateurs.
 
-Dans `config_custom.py` :
+### 6. Personnalisation
+
+Dans `config_custom.py`, remplace le pseudo par le tien :
+
 ```python
 pseudo = "TonPseudo"
 ```
 
 Dans `.streamlit/config.toml`, tu peux ajuster les couleurs du thème :
+
 ```toml
 [theme]
-primaryColor = "#00FFC8"
-backgroundColor = "#0E1117"
-secondaryBackgroundColor = "#161B22"
-textColor = "#E6EDF3"
+primaryColor = "#00FFC8"             # Vert néon
+backgroundColor = "#0E1117"          # Fond sombre
+secondaryBackgroundColor = "#161B22" # Widgets
+textColor = "#E6EDF3"                # Texte clair
 font = "sans serif"
 ```
 
@@ -134,6 +147,8 @@ streamlit run app.py
 4. Dans **Advanced settings → Secrets**, colle le contenu de ton `secrets.toml`
 5. Clique **Deploy**
 
+🌐 Application déployée : [kaki3d-stock-manager.streamlit.app](https://kaki3d-stock-manager.streamlit.app)
+
 ---
 
 ## 📡 Fonctionnalité NFC
@@ -142,28 +157,81 @@ La lecture NFC utilise la **Web NFC API** du navigateur.
 
 **Compatibilité :** Android + Chrome uniquement (pas iOS, pas desktop)
 
-**Pourquoi une page GitHub Pages ?**  
-Streamlit injecte ses pages dans un `iframe`, ce qui bloque la Web NFC API. La solution : une page HTML statique hébergée hors iframe sur GitHub Pages, qui redirige vers Streamlit après le scan avec l'UID en paramètre d'URL.
+> La page NFC est hébergée sur GitHub Pages (hors iframe Streamlit) car la Web NFC API ne fonctionne pas dans un contexte iframe.
 
 **Fonctionnement :**
 1. Colle un tag NFC 215 sur chaque bobine
 2. Enregistre l'UID du tag dans le champ NFC lors de l'ajout de la bobine
 3. Sur mobile, va dans **Scanner NFC** → clique le bouton → approche le tag
-4. L'appli affiche automatiquement la fiche bobine et permet d'enregistrer une consommation
+4. L'appli affiche automatiquement les infos de la bobine et permet d'enregistrer une consommation
+5. Si l'UID est inconnu → redirection automatique vers le formulaire d'ajout avec l'UID pré-rempli
 
-**Fallback :** saisie manuelle de l'UID disponible pour desktop, iOS ou lecteur USB HID.
+📄 Page NFC statique : [kakicrypto.github.io/kaki3d-Stock-Manager/nfc.html](https://kakicrypto.github.io/kaki3d-Stock-Manager/nfc.html)
+
+**Fallback :** saisie manuelle de l'UID disponible (compatible desktop, iOS, lecteur USB HID)
 
 ---
 
-## ⚖️ Logique de consommation
+## ⚖️ KakiScale — Balance connectée *(En développement)*
 
-Le suivi du filament repose sur la **pesée à la balance** :
+Extension hardware de Kaki3D : une balance connectée basée sur ESP32 qui pèse automatiquement une bobine, lit son tag NFC, et envoie les données directement à l'application.
 
-1. Avant la première impression, on connaît le poids initial (`initial_weight`) et la tare du support (`poids_bobine` via la table `bobine_vide`).
-2. Après chaque impression, on pèse la bobine et on saisit le poids mesuré (`poids_pesé`).
-3. Le poids consommé est calculé automatiquement : `poids_consommé = dernière_pesée - poids_actuel`.
+> Inspiré du projet [PandaBalance v2](https://makerworld.com) — entièrement adapté pour s'intégrer nativement à Kaki3D + Supabase.
 
-Cette approche est plus précise que saisir directement les grammes consommés estimés par le slicer.
+### Composants nécessaires
+
+| Composant | Détail | Prix estimé |
+|-----------|--------|-------------|
+| ESP32 WROOM-32 (38 pins) | Microcontrôleur WiFi | déjà disponible |
+| Cellule de charge 5 kg + HX711 | Kit amplificateur + capteur | ~2 € |
+| Module PN532 | Lecteur NFC I2C | ~3-4 € |
+| Câbles Dupont femelle-femelle 20 cm | Câblage | ~1 € |
+| Plaque aluminium 100x100 mm — 3 mm | Surface d'appui bobine | ~2 € |
+| Inserts M3 thermofusibles + vis M3x8 | Fixation boîtier | déjà disponible |
+| Boîtier imprimé 3D | Fichier à adapter (Fusion 360) | filament maison |
+
+**Total composants à commander : ~8-10 €**
+
+### Câblage ESP32
+
+**PN532 (I2C) → ESP32 :**
+```
+VCC  → 3V3
+GND  → GND
+SDA  → GPIO 21
+SCL  → GPIO 22
+```
+
+**HX711 → ESP32 :**
+```
+VCC  → 3V3
+GND  → GND
+DT   → GPIO 18
+SCK  → GPIO 19
+```
+
+> ⚠️ **Important** : avant de brancher le PN532, positionner les deux cavaliers sur le mode **I2C** (A0=1, A1=0). Sans ça, l'ESP32 ne détecte rien.
+
+### Flow de données
+
+```
+Bobine posée sur la balance
+        ↓
+ESP32 lit NFC (UID) + pèse (HX711)
+        ↓
+HTTP POST → API Kaki3D { uid, poids_mesure }
+        ↓
+Supabase mis à jour
+        ↓
+Streamlit affiche le poids réel en temps réel
+```
+
+### Bibliothèques Arduino requises
+
+- `HX711` — lecture cellule de charge
+- `Adafruit_PN532` — lecture NFC I2C
+- `HTTPClient` — envoi HTTP vers l'API
+- `ArduinoJson` — sérialisation du payload JSON
 
 ---
 
@@ -172,11 +240,11 @@ Cette approche est plus précise que saisir directement les grammes consommés e
 ```
 kaki3d-Stock-Manager/
 ├── app.py                                # Interface Streamlit principale
-├── action.py                             # Fonctions CRUD base de données (avec docstrings)
+├── action.py                             # Fonctions CRUD base de données
 ├── database.py                           # Connexion PostgreSQL via secrets
-├── config_custom.py                      # Configuration personnalisée (pseudo)
+├── config_custom.py                      # Personnalisation (pseudo)
 ├── requirements.txt                      # Dépendances Python
-├── nfc.html                              # Page NFC (GitHub Pages)
+├── nfc.html                              # Page NFC (déployée sur GitHub Pages)
 ├── static/
 │   └── nfc.html                          # Copie page NFC (static serving Streamlit)
 ├── asset/
@@ -184,7 +252,7 @@ kaki3d-Stock-Manager/
 ├── .streamlit/
 │   ├── config.toml                       # Thème + static serving
 │   └── secrets.toml                      # 🔒 Ne pas commiter !
-└── script-creation-table-inventaire.sql  # Schéma BDD complet
+└── script-creation-table-inventaire.sql  # Schéma BDD
 ```
 
 ---
@@ -194,32 +262,29 @@ kaki3d-Stock-Manager/
 ```
 materials ──┐
             ├── spools ──── usage_logs
-marques   ──┘    │
-                 └── bobine_vide
+marques   ──┤    │
+            └────┤
+       bobine_vide (Supabase partagé)
 ```
 
-| Table | Rôle |
-|-------|------|
-| `materials` | Types de filament (PLA, PETG, ABS...) |
-| `marques` | Fabricants (Prusament, Esun...) |
-| `bobine_vide` | Modèles de support avec leur poids de tare |
-| `spools` | Bobines avec paramètres slicer + référence au support |
-| `usage_logs` | Historique des consommations (poids pesé + poids consommé) |
+| Table | Rôle | Hébergement |
+|-------|------|-------------|
+| `materials` | Types de filament (PLA, PETG, ABS...) | BDD utilisateur |
+| `marques` | Fabricants (Prusament, Esun...) | BDD utilisateur |
+| `spools` | Bobines avec paramètres slicer + NFC ID | BDD utilisateur |
+| `usage_logs` | Historique des consommations par projet | BDD utilisateur |
+| `bobine_vide` | Poids de tare par marque et type de support | Supabase partagé (lecture seule via clé `anon`) |
+
+> La table `bobine_vide` est hébergée sur une instance Supabase centrale et partagée entre tous les utilisateurs de Kaki3D. Elle est accessible en lecture publique via la clé `anon` — aucune écriture possible depuis l'application.
 
 ---
 
 ## 🔒 Sécurité
 
-- Requêtes SQL 100% paramétrées (`%s`) — pas d'injection SQL possible
-- Credentials dans `st.secrets` uniquement, jamais en dur dans le code
+- Requêtes SQL 100% paramétrées (`%s`) — zéro injection SQL
+- Credentials dans `st.secrets` — jamais en dur dans le code
 - `secrets.toml` dans `.gitignore`
-- Whitelist `TABLES_AUTORISEES` dans `get_or_create_id()` pour les insertions dynamiques
-- ⚠️ RLS à activer sur toute les tables avec :
-        ✅ RLS activé sur toutes les tables
-        ✅ bobine_vide — SELECT pour tous
-        ✅ marques — SELECT pour tous + ALL pour service_role
-        ✅ spools, usage_logs, materials — ALL pour service_role
-
+- Whitelist `TABLES_AUTORISEES` dans `get_or_create_id()`
 
 ---
 
@@ -229,4 +294,4 @@ MIT — voir [LICENSE](LICENSE)
 
 ---
 
-Fait avec ❤️ par [Kakicrypto](https://github.com/Kakicrypto) pour tous les maker un peu fou 🚀
+Fait avec ❤️ par [Kakicrypto](https://github.com/Kakicrypto) dans le cadre d'une reconversion en Data/IA 🚀
