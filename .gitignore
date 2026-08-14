@@ -17,8 +17,9 @@ schema relationel .jpg
 Script calcul poid restant.sql
 *.docx
 *.code-workspace
-*.xlsx
 *.jpg
+*.xlsx
+
 
 #Fichier 3D
 *.3mf

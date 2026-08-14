@@ -10,6 +10,17 @@ Développé avec **Python**, **Streamlit**, **PostgreSQL**, intégration **NFC**
 
 ---
 
+<p align="center">
+  <img src="screenshots/01_etat_stock.png" width="49%">
+  <img src="screenshots/02_ajout_bobine.png" width="49%">
+</p>
+<p align="center">
+  <img src="screenshots/03_statistiques.png" width="49%">
+  <img src="screenshots/04_scanner_nfc.png" width="49%">
+</p>
+
+---
+
 ## ✨ Fonctionnalités
 
 - 📦 **Inventaire** — visualisation du stock avec poids restant en temps réel (cards + tableau)
