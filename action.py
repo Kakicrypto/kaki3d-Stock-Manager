@@ -419,6 +419,37 @@ def get_stats_by_month():
             connexion.close()
     return []
 
+def get_stats_by_material_current_month():
+    """Calcule la consommation de filament du mois en cours, groupée par matière.
+
+    Utilisée pour l'affichage des st.metric en haut de la page Statistiques.
+
+    Returns:
+        list[RealDictRow]: Liste de dictionnaires avec les clés
+            `type_materials` (str) et `total_consomme` (float),
+            limitée au mois calendaire en cours.
+            Triée par ordre alphabétique de matière.
+            Retourne une liste vide si la connexion échoue.
+    """
+    connexion = get_connection()
+    if connexion:
+        try:
+            with connexion.cursor(cursor_factory=RealDictCursor) as curs:
+                curs.execute("""
+                SELECT 
+                    mat.type_materials,
+                    SUM(u.poids_consomme) AS total_consomme
+                FROM public.usage_logs u
+                JOIN public.spools s ON u.id_spools = s.id_spools
+                JOIN public.materials mat ON s.id_materials = mat.id_materials
+                WHERE DATE_TRUNC('month', u.print_date) = DATE_TRUNC('month', CURRENT_DATE)
+                GROUP BY mat.type_materials
+                ORDER BY mat.type_materials;
+                """)
+                return curs.fetchall()
+        finally:
+            connexion.close()
+    return []
 
 def get_stats_by_project():
     """Calcule la consommation totale de filament par projet, limité au top 6.
@@ -452,7 +483,7 @@ def get_stats_by_project():
 
 
 def get_stats_by_material():
-    """Calcule le poids total de filament en stock par type de matière.
+    """Calcule le poids restant de filament en stock par type de matière.
 
     Basé sur le poids restant dans les bobine ,
     ce qui représente la quantité restantes par matière.
@@ -513,7 +544,7 @@ def get_derniere_pesee(id_spools, initial_weight):
             with connexion.cursor() as curs:
                 requete = ("""
                         SELECT COALESCE(
-                        (SELECT poids_pese FROM usage_logs WHERE id_spools = %s ORDER BY print_date DESC LIMIT 1),
+                        (SELECT poids_pese FROM usage_logs WHERE id_spools = %s ORDER BY print_date DESC, id_usage_logs DESC LIMIT 1),
                         (%s)
                         ) AS derniere_pesee
                         """)
