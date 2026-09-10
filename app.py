@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 import pandas as pd
-from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_derniere_pesee, get_all_bobine_vide_commune
+from action import get_inventory, add_spool, get_or_create_id, update_spool, usage_log, get_aggregated_inventory, get_all_materials, get_spool_by_nfc, get_stats_by_material, get_stats_by_project, get_stats_by_month, get_derniere_pesee, get_all_bobine_vide_commune, get_stats_by_material_current_month
 import time 
 import datetime
 import base64
@@ -42,6 +42,10 @@ def cached_get_stats_by_month():
 @st.cache_data
 def cached_get_spool_by_nfc(uid):
     return get_spool_by_nfc(uid)
+
+@st.cache_data
+def cached_get_stats_by_material_current_month():
+    return get_stats_by_material_current_month()
 
 # Configuration de la page
 st.set_page_config(page_title="Mon Stock de Filament - Kaki3D", layout="wide")
@@ -233,6 +237,14 @@ elif menu == ":material/add_circle: Ajouter une bobine":
 # --- 3. STATISTIQUES ---
 elif menu == ":material/analytics: Statistiques & Analyse":
     st.title(":material/analytics: Statistiques")
+    data_total_material = cached_get_stats_by_material_current_month()
+    sum_material = sum(element["total_consomme"] for element in data_total_material)
+    cols = st.columns(len(data_total_material) + 1)
+    for i, b in enumerate(data_total_material):
+        with cols[i]:
+            st.metric(b['type_materials'], f"{int(b['total_consomme'])}g")
+    with cols[-1]:
+        st.metric("Total", f"{int(sum_material)}g")
     c1, c2 = st.columns(2)
     data_material = cached_get_stats_by_material()
     data_month = cached_get_stats_by_month()
