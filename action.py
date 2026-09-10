@@ -544,7 +544,7 @@ def get_derniere_pesee(id_spools, initial_weight):
             with connexion.cursor() as curs:
                 requete = ("""
                         SELECT COALESCE(
-                        (SELECT poids_pese FROM usage_logs WHERE id_spools = %s ORDER BY print_date DESC LIMIT 1),
+                        (SELECT poids_pese FROM usage_logs WHERE id_spools = %s ORDER BY print_date DESC, id_usage_logs DESC LIMIT 1),
                         (%s)
                         ) AS derniere_pesee
                         """)
