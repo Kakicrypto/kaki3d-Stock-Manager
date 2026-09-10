@@ -244,10 +244,10 @@ elif menu == ":material/analytics: Statistiques & Analyse":
         if not df_material.empty:
             fig = px.bar(df_material,
                     x="type_materials",
-                    y= "poids_total", 
+                    y= "poids_filament_restant", 
                     color="type_materials",
                     title="Stock par matières", 
-                    labels= {"type_materials":"Matière", "poids_total":"Poid en stock"}, 
+                    labels= {"type_materials":"Matière", "poids_filament_restant":"Poid en stock"}, 
                     text_auto=True
                     )
             st.plotly_chart(fig)
